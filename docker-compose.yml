@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  db:
+    image: mongo
+    network_mode: host
+
+  web:
+    build: # upcoming
+    command: python ./main.py
+    network_mode: host
