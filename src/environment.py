@@ -26,7 +26,7 @@ def create_application_environment(package: 'ZipFile') -> str:
     package.extractall(app_dirpath)
 
     venv_dirpath = path.join(app_dirpath, 'venv')
-    venv.create(venv_dirpath)
+    venv.create(venv_dirpath, with_pip=True)
 
     # chdir(app_dirpath)
     #
