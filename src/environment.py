@@ -26,13 +26,16 @@ def create_application_environment(package: 'ZipFile') -> str:
     package.extractall(app_dirpath)
 
     venv_dirpath = path.join(app_dirpath, 'venv')
-    venv.create(venv_dirpath, with_pip=True)
+    venv.create(venv_dirpath)
 
-    # chdir(app_dirpath)
-    #
-    # subprocess.check_call(
-    #     [sys.executable, '-m', 'pip', 'install', '-r' 'requirements.txt']
-    # )
-    #
-    # chdir(pardir)
+    # command = 'source venv/bin/activate'
+    # process = subprocess.Popen(command.split(), cwd=app_dirpath)
+    # process.communicate()
+
+    subprocess.check_call(
+        [sys.executable, '-m', 'pip', 'install', '-r' 'requirements.txt'],
+        cwd=app_dirpath
+    )
+
+    chdir(pardir)
     return app_id

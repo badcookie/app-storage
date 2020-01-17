@@ -44,6 +44,6 @@ def test_environment_creation(get_package, validation_rules):
     venv_path = path.join(app_dirpath, 'venv')
     assert path.exists(venv_path)
 
-    # installed_packages = listdir(venv_path)
-    # assert len(installed_packages) != 0
+    installed_packages = listdir(venv_path)
+    assert len(installed_packages) != 0
 
