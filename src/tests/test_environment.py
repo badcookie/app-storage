@@ -1,6 +1,8 @@
 import pytest
+from os import path, listdir
 
 from src import errors
+from src.consts import DEFAULT_APPS_BASE_DIR
 from src.environment import validate_package, create_application_environment
 
 
@@ -32,4 +34,16 @@ def test_environment_creation(get_package, validation_rules):
     package = get_package('valid-package')
     validate_package(package, validation_rules)
 
-    create_application_environment(package)
+    app_id = create_application_environment(package)
+    app_dirpath = path.join(DEFAULT_APPS_BASE_DIR, app_id)
+    assert path.exists(app_dirpath)
+
+    extracted_files = listdir(app_dirpath)
+    assert len(extracted_files) != 0
+
+    venv_path = path.join(app_dirpath, 'venv')
+    assert path.exists(venv_path)
+
+    # installed_packages = listdir(venv_path)
+    # assert len(installed_packages) != 0
+
