@@ -37,5 +37,4 @@ def create_application_environment(package: 'ZipFile') -> str:
         cwd=app_dirpath
     )
 
-    chdir(pardir)
     return app_id
