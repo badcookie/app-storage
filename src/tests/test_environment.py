@@ -6,8 +6,6 @@ from src.consts import MAX_PACKAGE_SIZE_MB
 from src.utils import get_package_size_bytes, mb_to_bytes
 from src.environment import validate_package, create_application_environment
 
-from src.tests.utils import get_package
-
 
 required_files = ['application.py', 'requirements.txt']
 
@@ -49,25 +47,25 @@ validation_rules = [
 ]
 
 
-def test_valid_package():
+def test_valid_package(get_package):
     package = get_package('valid-package')
     validate_package(package, validation_rules)
     assert True
 
 
-def test_package_validation_with__missing_required_file():
+def test_package_validation_with__missing_required_file(get_package):
     package = get_package('package-with-missing-file')
     with pytest.raises(errors.RequiredFileNotFoundError):
         validate_package(package, validation_rules)
 
 
-def test_package_validation_with_empty_required_file():
+def test_package_validation_with_empty_required_file(get_package):
     package = get_package('package-with-empty-required-file')
     with pytest.raises(errors.EmptyRequiredFileError):
         validate_package(package, validation_rules)
 
 
-def test_package_with_invalid_size():
+def test_package_with_invalid_size(get_package):
     package = get_package('heavy-package')
     with pytest.raises(errors.InvalidPackageSizeError):
         validate_package(package, validation_rules)
