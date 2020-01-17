@@ -69,3 +69,10 @@ def test_package_with_invalid_size(get_package):
     package = get_package('heavy-package')
     with pytest.raises(errors.InvalidPackageSizeError):
         validate_package(package, validation_rules)
+
+
+def test_environment_creation(get_package):
+    package = get_package('valid-package')
+    validate_package(package, validation_rules)
+
+    create_application_environment(package)

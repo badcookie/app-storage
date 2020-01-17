@@ -1,3 +1,4 @@
+import pip
 from typing import List
 from zipfile import ZipFile
 
@@ -10,5 +11,5 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
             raise exception
 
 
-def create_application_environment():
+def create_application_environment(package: 'ZipFile'):
     pass
