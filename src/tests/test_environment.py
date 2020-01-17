@@ -1,4 +1,5 @@
 import pytest
+from os.path import join
 from zipfile import ZipFile
 
 from src import errors
@@ -6,13 +7,6 @@ from src.consts import MAX_PACKAGE_SIZE_MB
 from src.utils import get_package_size_bytes, mb_to_bytes
 from src.environment import validate_package, create_application_environment
 
-"""
-Валидация
-
-1. Нет нужных файлов
-2. Архив тяжёлый
-3. Нужные файлы пустые 
-"""
 
 required_files = ['application.py', 'requirements.txt']
 
@@ -54,29 +48,36 @@ validation_rules = [
 ]
 
 
+def build_package_path(package_name: str) -> str:
+    fixtures_dir = 'fixtures'
+    filename = f'{package_name}.zip'
+    return join(fixtures_dir, filename)
+
+
+def get_package(package_name: str) -> 'ZipFile':
+    package_path = build_package_path(package_name)
+    return ZipFile(package_path)
+
+
 def test_valid_package():
-    package_path = 'fixtures/valid-package.zip'
-    package = ZipFile(package_path)
+    package = get_package('valid-package')
     validate_package(package, validation_rules)
     assert True
 
 
 def test_package_validation_with__missing_required_file():
-    package_path = 'fixtures/package-with-missing-file.zip'
-    package = ZipFile(package_path)
+    package = get_package('package-with-missing-file')
     with pytest.raises(errors.RequiredFileNotFoundError):
         validate_package(package, validation_rules)
 
 
 def test_package_validation_with_empty_required_file():
-    package_path = 'fixtures/package-with-empty-required-file.zip'
-    package = ZipFile(package_path)
+    package = get_package('package-with-empty-required-file')
     with pytest.raises(errors.EmptyRequiredFileError):
         validate_package(package, validation_rules)
 
 
 def test_package_with_invalid_size():
-    package_path = 'fixtures/heavy-package.zip'
-    package = ZipFile(package_path)
+    package = get_package('heavy-package')
     with pytest.raises(errors.InvalidPackageSizeError):
         validate_package(package, validation_rules)
