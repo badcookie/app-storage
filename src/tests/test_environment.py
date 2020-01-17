@@ -1,11 +1,12 @@
 import pytest
-from os.path import join
 from zipfile import ZipFile
 
 from src import errors
 from src.consts import MAX_PACKAGE_SIZE_MB
 from src.utils import get_package_size_bytes, mb_to_bytes
 from src.environment import validate_package, create_application_environment
+
+from src.tests.utils import get_package
 
 
 required_files = ['application.py', 'requirements.txt']
@@ -46,17 +47,6 @@ validation_rules = [
         'exception': errors.EmptyRequiredFileError,
     },
 ]
-
-
-def build_package_path(package_name: str) -> str:
-    fixtures_dir = 'fixtures'
-    filename = f'{package_name}.zip'
-    return join(fixtures_dir, filename)
-
-
-def get_package(package_name: str) -> 'ZipFile':
-    package_path = build_package_path(package_name)
-    return ZipFile(package_path)
 
 
 def test_valid_package():
