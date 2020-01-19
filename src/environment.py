@@ -26,15 +26,22 @@ def create_application_environment(package: 'ZipFile') -> str:
     package.extractall(app_dirpath)
 
     venv_dirpath = path.join(app_dirpath, 'venv')
-    venv.create(venv_dirpath)
+    venv.create(venv_dirpath, with_pip=True)
+
+    """
+    Пакеты устанавливаются в основное окружение, поскольку
+    тесты (и само приложение потом) запускаем в нём.
+    Нужен способ задать конкретное окружение при установке пакетов
+    либо активировать его.
+    """
 
     # command = 'source venv/bin/activate'
     # process = subprocess.Popen(command.split(), cwd=app_dirpath)
     # process.communicate()
 
-    subprocess.check_call(
-        [sys.executable, '-m', 'pip', 'install', '-r' 'requirements.txt'],
-        cwd=app_dirpath
-    )
+    # subprocess.check_call(
+    #     [sys.executable, '-m', 'pip', 'install', '-r' 'requirements.txt'],
+    #     cwd=app_dirpath
+    # )
 
     return app_id
