@@ -2,7 +2,7 @@ import pytest
 from os import path, listdir
 
 from src import errors
-from src.consts import DEFAULT_APPS_BASE_DIR
+from src.consts import APPS_DIR
 from src.environment import validate_package, create_application_environment
 
 
@@ -35,7 +35,7 @@ def test_environment_creation(get_package, validation_rules):
     validate_package(package, validation_rules)
 
     app_id = create_application_environment(package)
-    app_dirpath = path.join(DEFAULT_APPS_BASE_DIR, app_id)
+    app_dirpath = path.join(APPS_DIR, app_id)
     assert path.exists(app_dirpath)
 
     extracted_files = listdir(app_dirpath)

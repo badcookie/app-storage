@@ -1,10 +1,10 @@
+import os
 import pytest
 from shutil import rmtree
-from os import path, mkdir
 from zipfile import ZipFile
 
 from src.utils import get_package_size_bytes, mb_to_bytes
-from src.consts import MAX_PACKAGE_SIZE_MB, DEFAULT_APPS_BASE_DIR
+from src.consts import MAX_PACKAGE_SIZE_MB, APPS_DIR
 from src.errors import (
     RequiredFileNotFoundError,
     InvalidPackageSizeError,
@@ -18,7 +18,7 @@ required_files = ['application.py', 'requirements.txt']
 def build_package_path(package_name: str) -> str:
     fixtures_dir = 'fixtures'
     filename = f'{package_name}.zip'
-    return path.join(fixtures_dir, filename)
+    return os.path.join(fixtures_dir, filename)
 
 
 def required_files_included(package: 'ZipFile') -> bool:
@@ -78,6 +78,5 @@ def get_package():
 
 @pytest.fixture(scope='session', autouse=True)
 def create_apps_directory():
-    mkdir(DEFAULT_APPS_BASE_DIR)
-    yield
-    rmtree(DEFAULT_APPS_BASE_DIR)
+    yield os.mkdir(APPS_DIR)
+    rmtree(APPS_DIR)
