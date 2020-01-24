@@ -12,12 +12,8 @@ from src.consts import (
 )
 
 
-def activate_app_venv(venv_dir: str) -> None:
+def activate_venv(venv_dir: str) -> None:
     environ['VIRTUAL_ENV'] = venv_dir
-
-
-def deactivate_app_venv() -> None:
-    environ['VIRTUAL_ENV'] = BASE_VENV_DIR
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -26,6 +22,18 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
         if not constraint_is_fulfilled(package):
             exception = rule['exception']
             raise exception
+
+
+def load_app_requirements(app_dir: str) -> None:
+    venv_dir = path.join(app_dir, 'venv')
+    venv.create(venv_dir, with_pip=True)
+
+    activate_venv(venv_dir)
+    subprocess.check_call(
+        ['venv/bin/pip', 'install', '-r' 'requirements.txt'],
+        cwd=app_dir
+    )
+    activate_venv(BASE_VENV_DIR)
 
 
 # TODO: обработка ошибок
@@ -37,14 +45,6 @@ def create_application_environment(package: 'ZipFile') -> str:
 
     package.extractall(app_dir)
 
-    venv_dir = path.join(app_dir, 'venv')
-    venv.create(venv_dir, with_pip=True)
-
-    activate_app_venv(venv_dir)
-    subprocess.check_call(
-        ['venv/bin/pip', 'install', '-r' 'requirements.txt'],
-        cwd=app_dir
-    )
-    deactivate_app_venv()
+    load_app_requirements(app_dir)
 
     return app_id
