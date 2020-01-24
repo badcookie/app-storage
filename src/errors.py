@@ -11,3 +11,7 @@ class InvalidPackageSizeError(Exception):
 
 class EmptyRequiredFileError(Exception):
     reason = 'One of required files is empty'
+
+
+class ApplicationInitError(Exception):
+    reason = 'Exceeded tries count for app creation: lack of unique ids'
