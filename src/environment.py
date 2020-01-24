@@ -28,6 +28,7 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
             raise exception
 
 
+# TODO: обработка ошибок
 def create_application_environment(package: 'ZipFile') -> str:
     app_id = uuid4().hex[:APP_ID_LENGTH]
 
