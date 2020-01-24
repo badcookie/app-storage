@@ -30,26 +30,32 @@ def load_app_requirements(app_dir: str) -> None:
     )
 
 
-def create_application_environment(package: 'ZipFile') -> str:
+def generate_app_id() -> str:
+    return uuid4().hex[:APP_ID_LENGTH]
 
-    def init_app_dir(try_count: int) -> str:            # TODO: test this stuff
+
+def init_app() -> str:
+    def create_dir(try_count: int) -> str:
         if try_count == APP_ID_CREATION_TRIES_COUNT:
             raise ApplicationInitError
 
-        application_id = uuid4().hex[:APP_ID_LENGTH]
+        application_id = generate_app_id()
         app_dirpath = path.join(APPS_DIR, application_id)
 
         if not path.exists(app_dirpath):
             mkdir(app_dirpath)
             return app_dirpath
 
-        init_app_dir(try_count + 1)
+        create_dir(try_count + 1)
 
-    app_dir = init_app_dir(0)
-    app_path, app_id = path.split(app_dir)
+    return create_dir(0)
+
+
+def create_application_environment(package: 'ZipFile') -> str:
+    app_dir = init_app()
+    apps_path, app_id = path.split(app_dir)
 
     package.extractall(app_dir)
-
     load_app_requirements(app_dir)
 
     return app_id
