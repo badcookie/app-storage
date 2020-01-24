@@ -12,7 +12,7 @@ def test_valid_package(get_package, validation_rules):
     assert True
 
 
-def test_package_validation_with__missing_required_file(get_package, validation_rules):
+def test_package_validation_with_missing_required_file(get_package, validation_rules):
     package = get_package('package-with-missing-file')
     with pytest.raises(errors.RequiredFileNotFoundError):
         validate_package(package, validation_rules)
@@ -44,6 +44,6 @@ def test_environment_creation(get_package, validation_rules):
     venv_path = path.join(app_dirpath, 'venv')
     assert path.exists(venv_path)
 
-    # installed_packages = listdir(venv_path)
-    # assert len(installed_packages) != 0
+    bin_path = path.join(venv_path, 'bin')
+    assert 'flask' in listdir(bin_path)
 
