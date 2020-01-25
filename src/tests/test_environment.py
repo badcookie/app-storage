@@ -36,6 +36,45 @@ def test_package_with_invalid_size(get_package, validation_rules):
         validate_package(package, validation_rules)
 
 
+def test_successful_app_init_from_first_try():
+    app_dir = init_app()
+    assert path.exists(app_dir)
+
+
+@patch('src.environment.generate_app_id')
+def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
+    app_ids = [
+        generate_app_id()
+        for _ in range(APP_ID_CREATION_TRIES_COUNT)
+    ]
+
+    for uid in app_ids[:-1]:
+        mkdir(path.join(APPS_DIR, uid))
+
+    items_generator = get_items_generator(app_ids)
+
+    app_id_generator_mock.side_effect = lambda: next(items_generator)
+    app_dir = init_app()
+    assert path.exists(app_dir)
+
+
+@patch('src.environment.generate_app_id')
+def test_failed_app_init(app_id_generator_mock, get_items_generator):
+    app_ids = [
+        generate_app_id()
+        for _ in range(APP_ID_CREATION_TRIES_COUNT)
+    ]
+
+    for uid in app_ids:
+        mkdir(path.join(APPS_DIR, uid))
+
+    items_generator = get_items_generator(app_ids)
+
+    app_id_generator_mock.side_effect = lambda: next(items_generator)
+    with pytest.raises(errors.ApplicationInitError):
+        init_app()
+
+
 def test_environment_creation(get_package, validation_rules):
     package = get_package('valid-package')
     validate_package(package, validation_rules)
@@ -52,24 +91,3 @@ def test_environment_creation(get_package, validation_rules):
 
     bin_path = path.join(venv_path, 'bin')
     assert 'flask' in listdir(bin_path)
-
-
-@patch('src.environment.generate_app_id')
-def test_app_init(app_id_generator_mock):
-    app_ids = [
-        generate_app_id()
-        for _ in range(APP_ID_CREATION_TRIES_COUNT)
-    ]
-
-    for uid in app_ids:
-        mkdir(path.join(APPS_DIR, uid))
-
-    def get_ids_generator():
-        for app_id in app_ids:
-            yield app_id
-
-    ids_generator = get_ids_generator()
-    app_id_generator_mock.return_value = next(ids_generator)
-
-    with pytest.raises(errors.ApplicationInitError):
-        init_app()

@@ -80,3 +80,12 @@ def get_package():
 def create_apps_directory():
     yield os.mkdir(APPS_DIR)
     rmtree(APPS_DIR)
+
+
+@pytest.fixture
+def get_items_generator():
+    def getter(collection):
+        for item in collection:
+            yield item
+
+    return getter

@@ -35,7 +35,7 @@ def generate_app_id() -> str:
 
 
 def init_app() -> str:
-    def create_dir(try_count: int) -> str:
+    def try_to_create_dir(try_count: int) -> str:
         if try_count == APP_ID_CREATION_TRIES_COUNT:
             raise ApplicationInitError
 
@@ -46,9 +46,9 @@ def init_app() -> str:
             mkdir(app_dirpath)
             return app_dirpath
 
-        create_dir(try_count + 1)
+        return try_to_create_dir(try_count + 1)
 
-    return create_dir(0)
+    return try_to_create_dir(try_count=0)
 
 
 def create_application_environment(package: 'ZipFile') -> str:
