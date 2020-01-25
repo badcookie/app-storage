@@ -3,13 +3,13 @@ import pytest
 from shutil import rmtree
 from zipfile import ZipFile
 
-from src.utils import get_package_size_bytes, mb_to_bytes
-from src.consts import MAX_PACKAGE_SIZE_MB, APPS_DIR
 from src.errors import (
     RequiredFileNotFoundError,
     InvalidPackageSizeError,
     EmptyRequiredFileError,
 )
+from src.consts import MAX_PACKAGE_SIZE_MB, APPS_DIR
+from src.utils import get_package_size_bytes, mb_to_bytes
 
 
 required_files = ['application.py', 'requirements.txt']

@@ -1,15 +1,15 @@
 import pytest
-from os import path, listdir, mkdir
 from unittest.mock import patch
+from os import path, listdir, mkdir
 
 from src import errors
-from src.consts import APPS_DIR, APP_ID_CREATION_TRIES_COUNT
 from src.environment import (
     init_app,
     generate_app_id,
     validate_package,
     create_application_environment,
 )
+from src.consts import APPS_DIR, APP_ID_CREATION_TRIES_COUNT
 
 
 def test_valid_package(get_package, validation_rules):
