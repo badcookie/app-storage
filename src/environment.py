@@ -14,6 +14,16 @@ from src.errors import ApplicationInitError
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
+    """
+    Проверяет zip архив на соответствие условиям. Если хотя бы
+    одно не выполняется, выбрасывает соответствующее исключение.
+
+    :param package: zip файл.
+    :param rules: список правил, по которым валидируется архив.
+    Каждое правило состоит из функции-предиката (условия выполнения) и исключения,
+    которое вызывается при невыполнении условия.
+    """
+
     for rule in rules:
         constraint_is_fulfilled = rule['constraint']
         if not constraint_is_fulfilled(package):
@@ -21,6 +31,13 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
 
 
 def load_app_requirements(app_dir: str) -> None:
+    """
+    Создаёт окружение в директории приложения и
+    устанавливает зависимости.
+
+    :param app_dir: путь до приложения.
+    """
+
     venv_dir = path.join(app_dir, 'venv')
     venv.create(venv_dir, with_pip=True)
 
@@ -35,6 +52,18 @@ def generate_app_id() -> str:
 
 
 def init_app() -> str:
+    """
+    Генерирует id приложения и создаёт
+    для него директорию. Если приложение с таким id
+    уже существует, пытается проделать всё то же самое
+    количество раз, заданное в APP_ID_CREATION_TRIES_COUNT.
+
+    Если ни одна попытка не пройдёт, вызовет
+    исключение.
+
+    :return: путь до созданной директории приложения.
+    """
+
     def try_to_create_dir(try_count: int) -> str:
         if try_count == APP_ID_CREATION_TRIES_COUNT:
             raise ApplicationInitError
@@ -52,6 +81,15 @@ def init_app() -> str:
 
 
 def create_application_environment(package: 'ZipFile') -> str:
+    """
+    Создаёт директорию приложения со своим окружением,
+    куда сохраняет файлы приложения и зависимостей,
+    после чего устанавливает эти зависимости.
+
+    :param package: zip архив с файлами приложения и зависимостей.
+    :return: id приложения.
+    """
+
     app_dir = init_app()
     apps_path, app_id = path.split(app_dir)
 
