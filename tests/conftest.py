@@ -1,6 +1,6 @@
 import os
+import shutil
 import pytest
-from shutil import rmtree
 from zipfile import ZipFile
 
 from src.errors import (
@@ -13,15 +13,6 @@ from src.utils import get_package_size_bytes, mb_to_bytes
 
 
 required_files = ['requirements.txt']
-
-
-def build_package_path(package_name: str) -> str:
-    fixtures_dir = 'fixtures'
-    filename = f'{package_name}.zip'
-    fixture_path = os.path.join(
-        __file__, os.pardir, fixtures_dir, filename
-    )
-    return os.path.abspath(fixture_path)
 
 
 def required_files_included(package: 'ZipFile') -> bool:
@@ -65,24 +56,28 @@ def validation_rules():
 
 @pytest.fixture
 def get_package():
-    cache = []
+    cache = {}
 
     def getter(package_name: str) -> 'ZipFile':
-        package_path = build_package_path(package_name)
+        fixture_path = f'fixtures/{package_name}'
+        package_path = shutil.make_archive(
+            fixture_path, 'zip', fixture_path
+        )
         package = ZipFile(package_path)
-        cache.append(package)
+        cache[package_path] = package
         return package
 
     yield getter
 
-    cached_package, = cache
-    cached_package.close()
+    package_dir, = cache
+    cache[package_dir].close()
+    os.remove(package_dir)
 
 
 @pytest.fixture(scope='session', autouse=True)
 def create_apps_directory():
     yield os.mkdir(APPS_DIR)
-    rmtree(APPS_DIR)
+    shutil.rmtree(APPS_DIR)
 
 
 @pytest.fixture
