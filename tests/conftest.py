@@ -12,13 +12,16 @@ from src.consts import MAX_PACKAGE_SIZE_MB, APPS_DIR
 from src.utils import get_package_size_bytes, mb_to_bytes
 
 
-required_files = ['application.py', 'requirements.txt']
+required_files = ['requirements.txt']
 
 
 def build_package_path(package_name: str) -> str:
     fixtures_dir = 'fixtures'
     filename = f'{package_name}.zip'
-    return os.path.join(fixtures_dir, filename)
+    fixture_path = os.path.join(
+        __file__, os.pardir, fixtures_dir, filename
+    )
+    return os.path.abspath(fixture_path)
 
 
 def required_files_included(package: 'ZipFile') -> bool:
