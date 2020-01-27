@@ -59,7 +59,9 @@ def get_package():
     cache = {}
 
     def getter(package_name: str) -> 'ZipFile':
-        fixture_path = f'fixtures/{package_name}'
+        fixture_path = os.path.join(
+            os.path.dirname(__file__), 'fixtures', package_name
+        )
         package_path = shutil.make_archive(
             fixture_path, 'zip', fixture_path
         )
