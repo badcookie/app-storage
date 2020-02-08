@@ -9,5 +9,7 @@ COPY requirements.txt /$project/
 WORKDIR /$project/
 RUN pip3 install -Ur requirements.txt
 
-COPY src ./
-WORKDIR /
+COPY src/ src/
+ENV PYTHONPATH "${PYTHONPATH}:src/"
+
+CMD ["python3", "src/server.py"]
