@@ -1,7 +1,7 @@
-tests/
+src/tests/
+src/__pycache__/
 venv/
 temp/
- __pycache__/
 README.md
 Dockerfile
 .gitignore
