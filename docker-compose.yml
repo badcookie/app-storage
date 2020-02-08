@@ -1,0 +1,9 @@
+version: "3.5"
+
+services:
+  backend:
+    container_name: "${PROJECT_NAME:-app_storage}_backend"
+    build:
+      dockerfile: Dockerfile
+    network_mode: host
+

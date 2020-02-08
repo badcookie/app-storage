@@ -1,0 +1,7 @@
+tests/
+venv/
+temp/
+ __pycache__/
+README.md
+Dockerfile
+.gitignore
