@@ -4,6 +4,6 @@ services:
   backend:
     container_name: "${PROJECT_NAME:-app_storage}_backend"
     build: ./
-    image: "${PROJECT_NAME:-app_storage}_backend"
+    image: "${PROJECT_NAME:-app_storage}:backend"
     network_mode: host
 
