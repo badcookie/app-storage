@@ -3,7 +3,7 @@ from unittest.mock import patch
 from os import path, listdir, mkdir
 
 from src import errors
-from src.environment import (
+from src.lib.environment import (
     init_app,
     generate_app_id,
     validate_package,
@@ -41,7 +41,7 @@ def test_successful_app_init_from_first_try():
     assert path.exists(app_dir)
 
 
-@patch('src.environment.generate_app_id')
+@patch('src.lib.environment.generate_app_id')
 def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
     app_ids = [
         generate_app_id()
@@ -58,7 +58,7 @@ def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_gener
     assert path.exists(app_dir)
 
 
-@patch('src.environment.generate_app_id')
+@patch('src.lib.environment.generate_app_id')
 def test_failed_app_init(app_id_generator_mock, get_items_generator):
     app_ids = [
         generate_app_id()
