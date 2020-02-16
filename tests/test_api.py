@@ -1,4 +1,5 @@
 import json
+import os
 
 import docker
 import pytest
@@ -38,6 +39,8 @@ def app_creation_url(base_url):
 def prepare_send_file_request(get_package, app_creation_url):
     def _(filename: str):
         get_package(filename)
+        print('TESTS DIR: ', os.listdir('.'))
+        print('FIXTURES: ', os.listdir('fixtures'))
         zipfile = open(f'fixtures/{filename}.zip', 'rb')
         files = {'zipfile': zipfile}
 
