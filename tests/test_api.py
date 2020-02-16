@@ -4,6 +4,8 @@ import os
 import docker
 import pytest
 from requests import Request
+from src.consts import APPS_DIR
+from src.validation import required_files
 
 TESTS_DIR = os.path.dirname(__file__)
 FIXTURES_DIR = os.path.join(TESTS_DIR, "fixtures")
@@ -81,7 +83,15 @@ async def test_successful_app_validation(
         app_creation_url, method='POST', **request_data
     )
     assert response.code == 200
-    assert response.body.decode() == 'OK'
+
+    app_id = response.body.decode()
+    app_dir = os.path.join(APPS_DIR, app_id)
+    assert os.path.exists(app_dir)
+
+    files = os.listdir(app_dir)
+    assert 'venv' in files
+    files.remove('venv')
+    assert files == required_files
 
 
 @pytest.mark.gen_test

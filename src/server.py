@@ -3,7 +3,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from more_itertools import one
-from src.environment import validate_package
+from src.environment import create_application_environment, validate_package
 from src.validation import VALIDATION_RULES
 from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
@@ -28,8 +28,8 @@ class ApplicationsHandler(RequestHandler):
     async def post(self):
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
-        # files = file.namelist()
-        self.write("OK")
+        app_id = create_application_environment(file)
+        self.write(app_id)
 
 
 def make_app():
