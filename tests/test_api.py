@@ -5,6 +5,9 @@ import docker
 import pytest
 from requests import Request
 
+TESTS_DIR = os.path.dirname(__file__)
+FIXTURES_DIR = os.path.join(TESTS_DIR, "fixtures")
+
 # @pytest.fixture(scope='module')
 # def docker_client():
 #     return docker.from_env()
@@ -39,9 +42,12 @@ def app_creation_url(base_url):
 def prepare_send_file_request(get_package, app_creation_url):
     def _(filename: str):
         get_package(filename)
-        print('TESTS DIR: ', os.listdir('.'))
-        print('FIXTURES: ', os.listdir('fixtures'))
-        zipfile = open(f'fixtures/{filename}.zip', 'rb')
+
+        filename_with_ext = f'{filename}.zip'
+        filepath = os.path.join(FIXTURES_DIR, filename_with_ext)
+        absolute_filepath = os.path.abspath(filepath)
+
+        zipfile = open(absolute_filepath, 'rb')
         files = {'zipfile': zipfile}
 
         request = Request(url=app_creation_url, files=files)
