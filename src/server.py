@@ -2,14 +2,21 @@ import os
 from io import BytesIO
 from zipfile import ZipFile
 
+from more_itertools import one
+from src.environment import validate_package
+from src.validation import VALIDATION_RULES
+from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler
 
 APP_PORT = os.environ.get("APP_PORT", 8000)
 
 
-def get_package_from_request(request):
-    pass
+def get_request_file(request: "HTTPServerRequest") -> "ZipFile":
+    files = request.files
+    file_data = one(files.get("zipfile"))
+    file_body = file_data["body"]
+    return ZipFile(BytesIO(file_body), "r")
 
 
 class BaseHandler(RequestHandler):
@@ -19,10 +26,8 @@ class BaseHandler(RequestHandler):
 
 class ApplicationsHandler(RequestHandler):
     async def post(self):
-        files = self.request.files
-        file_data = files.get("zipfile")[0]
-        file_body = file_data["body"]
-        file = ZipFile(BytesIO(file_body), "r")
+        file = get_request_file(self.request)
+        validate_package(file, VALIDATION_RULES)
         # files = file.namelist()
         self.write("OK")
 
