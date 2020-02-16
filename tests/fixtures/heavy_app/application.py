@@ -15,4 +15,3 @@ def post_request():
 @application.route("/", methods=["GET"])
 def get_request():
     return "Success"
-

@@ -1,15 +1,11 @@
 import os
-import pytest
 from unittest.mock import patch
 
+import pytest
 from src import errors
-from src.lib.environment import (
-    init_app,
-    generate_app_id,
-    validate_package,
-    create_application_environment,
-)
-from src.consts import APPS_DIR, APP_ID_CREATION_TRIES_COUNT
+from src.consts import APP_ID_CREATION_TRIES_COUNT, APPS_DIR
+from src.lib.environment import (create_application_environment,
+                                 generate_app_id, init_app, validate_package)
 
 
 def test_valid_package(get_package, validation_rules):
