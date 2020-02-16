@@ -1,19 +1,15 @@
-import venv
 import subprocess
-from uuid import uuid4
+import venv
+from os import mkdir, path
 from typing import List
-from os import path, mkdir
+from uuid import uuid4
 from zipfile import ZipFile
 
-from src.consts import (
-    APPS_DIR,
-    APP_ID_LENGTH,
-    APP_ID_CREATION_TRIES_COUNT,
-)
+from src.consts import APP_ID_CREATION_TRIES_COUNT, APP_ID_LENGTH, APPS_DIR
 from src.errors import ApplicationInitError
 
 
-def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
+def validate_package(package: "ZipFile", rules: List[dict]) -> None:
     """
     Проверяет zip архив на соответствие условиям. Если хотя бы
     одно не выполняется, выбрасывает соответствующее исключение.
@@ -25,9 +21,9 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
     """
 
     for rule in rules:
-        constraint_is_fulfilled = rule['constraint']
+        constraint_is_fulfilled = rule["constraint"]
         if not constraint_is_fulfilled(package):
-            raise rule['exception']
+            raise rule["exception"]
 
 
 def load_app_requirements(app_dir: str) -> None:
@@ -38,12 +34,11 @@ def load_app_requirements(app_dir: str) -> None:
     :param app_dir: путь до приложения.
     """
 
-    venv_dir = path.join(app_dir, 'venv')
+    venv_dir = path.join(app_dir, "venv")
     venv.create(venv_dir, with_pip=True)
 
     subprocess.check_call(
-        ['venv/bin/pip', 'install', '-r' 'requirements.txt'],
-        cwd=app_dir
+        ["venv/bin/pip", "install", "-r" "requirements.txt"], cwd=app_dir
     )
 
 
@@ -80,7 +75,7 @@ def init_app() -> str:
     return try_to_create_dir(try_count=0)
 
 
-def create_application_environment(package: 'ZipFile') -> str:
+def create_application_environment(package: "ZipFile") -> str:
     """
     Создаёт директорию приложения со своим окружением,
     куда сохраняет файлы приложения и зависимостей,
