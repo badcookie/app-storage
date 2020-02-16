@@ -1,5 +1,5 @@
 test:
-	@python -m pytest tests/
+	@python -m pytest src/tests/
 
 run:
 	@docker-compose up -d
