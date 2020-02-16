@@ -1,11 +1,8 @@
-import json
-from flask import Flask, request
+from flask import Flask
+
 application = Flask(__name__)
 
 
-@application.route('/some_path', methods=['POST'])
+@application.route("/some_path", methods=["GET"])
 def hello_world():
-    data = request.environ.get('wsgi.input').read()
-    some_id = json.loads(data).get('some_id')
-    return f'{some_id + 1}\n'
-
+    return "It works"
