@@ -1,4 +1,6 @@
 import os
+from io import BytesIO
+from zipfile import ZipFile
 
 from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler
@@ -18,7 +20,11 @@ class BaseHandler(RequestHandler):
 class ApplicationsHandler(RequestHandler):
     async def post(self):
         files = self.request.files
-        await self.finish(files)
+        file_data = files.get("zipfile")[0]
+        file_body = file_data["body"]
+        file = ZipFile(BytesIO(file_body), "r")
+        # files = file.namelist()
+        self.write("OK")
 
 
 def make_app():

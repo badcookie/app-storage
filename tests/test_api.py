@@ -2,7 +2,7 @@ import json
 
 import docker
 import pytest
-import requests
+from requests import Request
 
 # @pytest.fixture(scope='module')
 # def docker_client():
@@ -30,21 +30,30 @@ import requests
 
 
 @pytest.mark.gen_test
-async def test_something(http_client, base_url):
+async def test_simple_get_request(http_client, base_url):
     response = await http_client.fetch(f"{base_url}")
     assert response.code == 200
     data = response.body.decode()
     assert json.loads(data) == {"it": "works"}
 
 
-# @pytest.mark.asyncio
-# async def test_zip_request(get_package, client):
-#     package = get_package('valid_app')
-#
-#     with open('fixtures/valid_app.zip', 'rb') as zipfile:
-#         bytes_data = zipfile.read()
-#
-#     files = {'upload_file': bytes_data}
-#     response = requests.post('http://localhost:8000/create/', files=files)
-#     assert response.status_code == 200
-#     assert 'OK' in response.text
+@pytest.mark.gen_test
+async def test_app_creation(get_package, http_client, base_url):
+    url = f'{base_url}/create/'
+
+    get_package('valid_app')
+    zipfile = open('fixtures/valid_app.zip', 'rb')
+    files = {'zipfile': zipfile}
+    data = {}
+
+    request = Request(url=url, files=files, data=data)
+    prepare = request.prepare()
+    content_type = prepare.headers.get('Content-Type')
+    body = prepare.body
+    headers = {
+        "Content-Type": content_type,
+    }
+
+    response = await http_client.fetch(url, method='POST', body=body, headers=headers)
+    assert response.code == 200
+    assert response.body.decode() == 'OK'
