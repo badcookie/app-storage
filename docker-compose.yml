@@ -1,9 +1,26 @@
 version: "3.5"
 
 services:
+  unit:
+    container_name: "${PROJECT_NAME:-app_storage}_unit"
+    image: "nginx/unit:1.15.0-python3.7"
+    network_mode: host
+    command: ["unitd", "--no-daemon", "--control", "127.0.0.1:8080"]
+    volumes:
+      - app-storage-volume:/app_storage/
+      - app-storage-volume:/apps/
+
   backend:
     container_name: "${PROJECT_NAME:-app_storage}_backend"
-    build: ./
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
     image: "${PROJECT_NAME:-app_storage}:backend"
-    network_mode: host
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - app-storage-volume:/app_storage/
+      - app-storage-volume:/apps/
 
+volumes:
+  app-storage-volume: {}

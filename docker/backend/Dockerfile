@@ -1,9 +1,10 @@
-FROM nginx/unit:1.15.0-python3.7
+FROM python:3.7
 
-ENV project=${PROJECT_NAME:-app_storage}
+ENV project ${PROJECT_NAME:-app_storage}
 
 RUN apt-get update && apt-get install -y python3-pip
 
+RUN mkdir /apps
 RUN mkdir /$project
 COPY requirements.txt /$project/
 WORKDIR /$project/
