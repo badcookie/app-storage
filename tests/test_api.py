@@ -15,7 +15,7 @@ def docker_client():
     return docker.from_env()
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture()
 def unit_service(docker_client):
     containers = docker_client.containers.list()
     runner_container = [*filter(lambda item: "runner" in item.name, containers)]
@@ -24,7 +24,6 @@ def unit_service(docker_client):
     )
     image = docker_client.images.pull(UNIT_IMAGE)
     volume = {APPS_DIR: {"bind": "/apps/", "mode": "rw"}}
-    print("APPPSSSSS DIRRR", APPS_DIR)
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
         image=image,
@@ -36,7 +35,6 @@ def unit_service(docker_client):
     container.start()
     yield container
     container.stop()
-    print(container.logs())
     container.remove()
 
 
@@ -79,7 +77,7 @@ async def test_simple_get_request(http_client, base_url):
 
 @pytest.mark.gen_test(timeout=30)
 async def test_successful_app_validation(
-    prepare_send_file_request, http_client, app_creation_url
+    unit_service, prepare_send_file_request, http_client, app_creation_url
 ):
     apps_count = 3
     request_data = prepare_send_file_request("valid_app")
@@ -88,6 +86,7 @@ async def test_successful_app_validation(
         response = await http_client.fetch(
             app_creation_url, method="POST", **request_data, raise_error=False
         )
+        print(unit_service.logs())
         assert response.code == 200
 
         response_body = response.body.decode()
