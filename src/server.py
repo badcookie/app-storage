@@ -1,15 +1,14 @@
-import os
 from io import BytesIO
 from zipfile import ZipFile
 
 from more_itertools import one
+from src.apps_management import register_app
+from src.consts import APP_PORT
 from src.environment import create_application_environment, validate_package
 from src.validation import VALIDATION_RULES
 from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler
-
-APP_PORT = os.environ.get("APP_PORT", 8000)
 
 
 def get_request_file(request: "HTTPServerRequest") -> "ZipFile":
@@ -29,7 +28,9 @@ class ApplicationsHandler(RequestHandler):
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
         app_id = create_application_environment(file)
-        self.write(app_id)
+        app_port = await register_app(app_id)
+        app_data = {"uid": app_id, "port": app_port}
+        self.write(app_data)
 
 
 def make_app():
