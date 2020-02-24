@@ -24,6 +24,7 @@ def unit_service(docker_client):
     )
     image = docker_client.images.pull(UNIT_IMAGE)
     volume = {APPS_DIR: {"bind": "/apps/", "mode": "rw"}}
+    print("APPPSSSSS DIRRR", APPS_DIR)
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
         image=image,
