@@ -4,7 +4,9 @@ from os import path
 import docker
 import pytest
 from requests import Request
-from src.consts import APPS_DIR, UNIT_IMAGE, UNIT_PORT
+from src.apps_management import register_app
+from src.consts import APPS_DIR, BASE_DIR, PROJECT_NAME, UNIT_IMAGE, UNIT_PORT
+from src.environment import create_application_environment, validate_package
 from src.validation import required_files
 
 TESTS_DIR = path.dirname(__file__)
@@ -27,16 +29,43 @@ def unit_service(docker_client):
         else f'container:/{runner_container[0].name}'
     )
     image = docker_client.images.pull(UNIT_IMAGE)
-    volume = {APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
+    volume = {
+        APPS_DIR: {'bind': '/apps/', 'mode': 'rw'},
+    }
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
         image=image, network=network,
-        auto_remove=True, command=command,
-        volumes=volume,
+        command=command, auto_remove=True,
+        volumes=volume, name='test_unit_service',
     )
     container.start()
     yield container
     container.stop()
+
+
+# @pytest.fixture(scope='module', autouse=True)
+# def another_unit_service(docker_client):
+#     containers = docker_client.containers.list()
+#     runner_container = [
+#         *filter(lambda item: 'runner' in item.name, containers)
+#     ]
+#     network = (
+#         'host' if not runner_container
+#         else f'container:/{runner_container[0].name}'
+#     )
+#     image = docker_client.images.pull(UNIT_IMAGE)
+#     volume = {
+#         APPS_DIR: {'bind': '/apps/', 'mode': 'rw'},
+#     }
+#     command = f"unitd --no-daemon --control 127.0.0.1:9001"
+#     container = docker_client.containers.create(
+#         image=image, network=network,
+#         command=command, auto_remove=False,
+#         volumes=volume, name='test_unit_service2',
+#     )
+#     container.start()
+#     return container
+#     # container.stop()
 
 
 @pytest.fixture
@@ -84,18 +113,21 @@ async def test_successful_app_validation(
 ):
     request_data = prepare_send_file_request('valid_app')
     response = await http_client.fetch(
-        app_creation_url, method='POST', **request_data, raise_error=False
+        app_creation_url, method='POST',
+        **request_data, raise_error=False
     )
     assert response.code == 200
 
-    # app_id = response.body.decode()
-    # app_dir = os.path.join(APPS_DIR, app_id)
-    # assert os.path.exists(app_dir)
-    #
-    # files = os.listdir(app_dir)
-    # assert 'venv' in files
-    # files.remove('venv')
-    # assert files == required_files
+    response_body = response.body.decode()
+    app_data = json.loads(response_body)
+
+    app_port = app_data['port']
+    app_url = f"http://localhost:{app_port}/"
+    app_response = await http_client.fetch(
+        app_url, method='GET', raise_error=False
+    )
+    response_data = app_response.body.decode()
+    assert response_data == "It works"
 
 
 @pytest.mark.gen_test

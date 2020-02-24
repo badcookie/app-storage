@@ -2,7 +2,7 @@ import json
 import os
 from socket import AF_INET, SOCK_STREAM, socket
 
-from src.consts import APPS_DIR, UNIT_PORT
+from src.consts import UNIT_PORT
 from tornado.httpclient import AsyncHTTPClient
 
 BASE_URL = f"http://localhost:{UNIT_PORT}/config"
@@ -19,31 +19,36 @@ def get_unused_port() -> int:
 
 async def add_listener(app_id: str) -> int:
     app_port = get_unused_port()
-    url = f"{BASE_URL}/listeners/127.0.0.1:{app_port}/pass"
-    listener_pass = f"applications/{app_id}"
-    await client.fetch(url, body=listener_pass, method="PUT", raise_error=False)
+    url = f"{BASE_URL}/listeners/127.0.0.1:{app_port}/"
+    listener_data = {"pass": f"applications/{app_id}"}
+    request_body = json.dumps(listener_data)
+    response = await client.fetch(
+        url, body=request_body, method="PUT", raise_error=False
+    )
+    print(response.body.decode())
     return app_port
 
 
 async def add_application(app_id: str) -> None:
+    apps_dir = "/apps/"
+    app_dir = os.path.join(apps_dir, app_id)
+    venv_dir = os.path.join(app_dir, "venv")
+
     app_data = {
         "type": "python 3",
-        "path": os.path.join(APPS_DIR, app_id),
+        "path": app_dir,
         "module": "application",
+        "home": venv_dir,
     }
     request_body = json.dumps(app_data)
-    url = f"{BASE_URL}/applications/{app_id}"
+    url = f"{BASE_URL}/applications/{app_id}/"
     response = await client.fetch(
         url, body=request_body, method="PUT", raise_error=False
     )
-    print(response.body)
+    print(response.body.decode())
 
 
 async def register_app(app_id: str) -> int:
     await add_application(app_id)
     app_port = await add_listener(app_id)
     return app_port
-
-
-# curl -X PUT --data-binary @config.json --unix-socket
-# /path/to/control.unit.sock http://localhost/config/listeners/127.0.0.1:8300
