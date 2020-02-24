@@ -75,24 +75,27 @@ async def test_simple_get_request(http_client, base_url):
     assert json.loads(data) == {"it": "works"}
 
 
-@pytest.mark.gen_test
+@pytest.mark.gen_test(timeout=30)
 async def test_successful_app_validation(
     prepare_send_file_request, http_client, app_creation_url
 ):
+    apps_count = 3
     request_data = prepare_send_file_request("valid_app")
-    response = await http_client.fetch(
-        app_creation_url, method="POST", **request_data, raise_error=False
-    )
-    assert response.code == 200
 
-    response_body = response.body.decode()
-    app_data = json.loads(response_body)
+    for _ in range(apps_count):
+        response = await http_client.fetch(
+            app_creation_url, method="POST", **request_data, raise_error=False
+        )
+        assert response.code == 200
 
-    app_port = app_data["port"]
-    app_url = f"http://localhost:{app_port}/"
-    app_response = await http_client.fetch(app_url, method="GET", raise_error=False)
-    response_data = app_response.body.decode()
-    assert response_data == "It works"
+        response_body = response.body.decode()
+        app_data = json.loads(response_body)
+
+        app_port = app_data["port"]
+        app_url = f"http://localhost:{app_port}/"
+        app_response = await http_client.fetch(app_url, method="GET", raise_error=False)
+        response_data = app_response.body.decode()
+        assert response_data == "It works"
 
 
 @pytest.mark.gen_test
