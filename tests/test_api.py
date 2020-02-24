@@ -35,6 +35,7 @@ def unit_service(docker_client):
     )
     container.start()
     yield container
+    print(container.logs())
     container.stop()
 
 
@@ -79,7 +80,7 @@ async def test_simple_get_request(http_client, base_url):
 async def test_successful_app_validation(
     prepare_send_file_request, http_client, app_creation_url
 ):
-    apps_count = 2
+    apps_count = 3
     request_data = prepare_send_file_request("valid_app")
 
     for _ in range(apps_count):
