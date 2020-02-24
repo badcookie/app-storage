@@ -29,14 +29,14 @@ def unit_service(docker_client):
         image=image,
         network=network,
         command=command,
-        auto_remove=True,
         volumes=volume,
         name="test_unit_service",
     )
     container.start()
     yield container
-    print(container.logs())
     container.stop()
+    print(container.logs())
+    container.remove()
 
 
 @pytest.fixture
