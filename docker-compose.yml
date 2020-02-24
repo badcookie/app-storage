@@ -3,11 +3,10 @@ version: "3.5"
 services:
   unit:
     container_name: "${PROJECT_NAME:-app_storage}_unit"
-    image: "nginx/unit:1.15.0-python3.7"
+    image: "${UNIT_IMAGE:-nginx/unit:1.15.0-python3.7}"
     network_mode: host
     command: ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-9000}"]
     volumes:
-      - project-volume:/app_storage/
       - apps-volume:/apps/
 
   backend:
@@ -19,9 +18,7 @@ services:
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     volumes:
-      - project-volume:/app_storage/
       - apps-volume:/apps/
 
 volumes:
-  project-volume: {}
   apps-volume: {}

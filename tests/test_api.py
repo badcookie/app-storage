@@ -4,37 +4,39 @@ from os import path
 import docker
 import pytest
 from requests import Request
-from src.consts import APPS_DIR, UNIT_PORT
+from src.consts import APPS_DIR, UNIT_IMAGE, UNIT_PORT
 from src.validation import required_files
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, "fixtures")
-UNIT_IMAGE_DIR = path.join(path.dirname(TESTS_DIR), "docker")
 
 
-# @pytest.fixture(scope='module')
-# def docker_client():
-#     return docker.from_env()
-#
-#
-# @pytest.fixture(scope='module', autouse=True)
-# def unit_service(docker_client):
-#     containers = docker_client.containers.list()
-#     runner_container = [
-#         *filter(lambda item: 'runner' in item.name, containers)
-#     ]
-#     network = (
-#         'host' if not runner_container
-#         else f'container:/{runner_container[0].name}'
-#     )
-#     dockerfile_path = path.join(UNIT_IMAGE_DIR, "unit")
-#     image, _ = docker_client.images.build(path=dockerfile_path)
-#     container = docker_client.containers.create(
-#         image=image, network=network, auto_remove=True
-#     )
-#     container.start()
-#     yield container
-#     container.stop()
+@pytest.fixture(scope='module')
+def docker_client():
+    return docker.from_env()
+
+
+@pytest.fixture(scope='module', autouse=True)
+def unit_service(docker_client):
+    containers = docker_client.containers.list()
+    runner_container = [
+        *filter(lambda item: 'runner' in item.name, containers)
+    ]
+    network = (
+        'host' if not runner_container
+        else f'container:/{runner_container[0].name}'
+    )
+    image = docker_client.images.pull(UNIT_IMAGE)
+    volume = {APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
+    command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
+    container = docker_client.containers.create(
+        image=image, network=network,
+        auto_remove=True, command=command,
+        volumes=volume,
+    )
+    container.start()
+    yield container
+    container.stop()
 
 
 @pytest.fixture
