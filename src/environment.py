@@ -38,7 +38,7 @@ def load_app_requirements(app_dir: str) -> None:
     venv.create(venv_dir, with_pip=True)
 
     subprocess.check_call(
-        ["venv/bin/pip", "install", "-r" "requirements.txt"], cwd=app_dir
+        ["venv/bin/pip3", "install", "-r" "requirements.txt"], cwd=app_dir
     )
 
 
