@@ -27,7 +27,7 @@ def unit_service(docker_client):
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
         image=image,
-        network="bridge",
+        network=None,
         command=command,
         volumes=volume,
         name="test_unit_service",
