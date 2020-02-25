@@ -33,8 +33,10 @@ class ApplicationsHandler(RequestHandler):
     async def post(self):
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
+
         app_id = create_application_environment(file)
         app_port = await register_app(app_id)
+
         app_data = {"uid": app_id, "port": app_port}
         self.write(app_data)
 
