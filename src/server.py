@@ -24,6 +24,12 @@ class BaseHandler(RequestHandler):
 
 
 class ApplicationsHandler(RequestHandler):
+    """
+    Принимает zip архив приложения, создаёт для него
+    окружение, обновляет конфигурацию веб-сервера
+    и сохраняет в бд данные о приложении.
+    """
+
     async def post(self):
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)

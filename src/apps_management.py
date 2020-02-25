@@ -18,6 +18,14 @@ def get_unused_port() -> int:
 
 
 async def add_listener(app_id: str) -> int:
+    """
+    Делает запрос n/unit на добавление адреса, по
+    которому будет доступно приложение.
+
+    :param app_id: id приложения.
+    :return: порт, который приложение будет слушать.
+    """
+
     app_port = get_unused_port()
     url = f"{BASE_URL}/listeners/127.0.0.1:{app_port}/"
     listener_data = {"pass": f"applications/{app_id}"}
@@ -30,15 +38,21 @@ async def add_listener(app_id: str) -> int:
 
 
 async def add_application(app_id: str) -> None:
+    """
+    Делает запрос n/unit на добавление приложения в конфигурацию.
+
+    :param app_id: id приложения.
+    """
+
     apps_dir = "/apps/"
     app_dir = os.path.join(apps_dir, app_id)
     venv_dir = os.path.join(app_dir, "venv")
 
     app_data = {
         "type": "python 3",
-        "path": f"/apps/{app_id}/",
+        "path": app_dir,
         "module": "application",
-        "home": f"/apps/{app_id}/venv/",
+        "home": venv_dir,
     }
     request_body = json.dumps(app_data)
     url = f"{BASE_URL}/applications/{app_id}/"
@@ -49,6 +63,13 @@ async def add_application(app_id: str) -> None:
 
 
 async def register_app(app_id: str) -> int:
+    """
+    Делает запрос n/unit на обновление конфигурации.
+
+    :param app_id: id приложения.
+    :return: порт, который приложение будет слушать.
+    """
+
     await add_application(app_id)
     app_port = await add_listener(app_id)
     return app_port
