@@ -35,17 +35,16 @@ async def add_application(app_id: str) -> None:
     venv_dir = os.path.join(app_dir, "venv")
 
     app_data = {
-        "type": "python 3.7",
+        "type": "python 3",
         "path": app_dir,
         "module": "application",
-        "home": venv_dir,
+        # "home": venv_dir,
     }
     request_body = json.dumps(app_data)
     url = f"{BASE_URL}/applications/{app_id}/"
     response = await client.fetch(
         url, body=request_body, method="PUT", raise_error=False
     )
-    print(os.environ.get("PYTHONHOME"))
     print(response.body.decode())
 
 
