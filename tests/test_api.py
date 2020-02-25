@@ -54,6 +54,7 @@ def prepare_send_file_request(get_package, app_creation_url):
         prepared_request = request.prepare()
         content_type = prepared_request.headers.get("Content-Type")
         headers = {"Content-Type": content_type}
+
         return {
             "body": prepared_request.body,
             "headers": headers,
