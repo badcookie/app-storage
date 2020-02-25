@@ -63,14 +63,6 @@ def prepare_send_file_request(get_package, app_creation_url):
     return _
 
 
-@pytest.mark.gen_test
-async def test_simple_get_request(http_client, base_url):
-    response = await http_client.fetch(f"{base_url}")
-    assert response.code == 200
-    data = response.body.decode()
-    assert json.loads(data) == {"it": "works"}
-
-
 @pytest.mark.gen_test(timeout=30)
 async def test_successful_app_validation(
     unit_service, prepare_send_file_request, http_client, app_creation_url,

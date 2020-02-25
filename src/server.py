@@ -18,11 +18,6 @@ def get_request_file(request: "HTTPServerRequest") -> "ZipFile":
     return ZipFile(BytesIO(file_body), "r")
 
 
-class BaseHandler(RequestHandler):
-    async def get(self):
-        await self.finish({"it": "works"})
-
-
 class ApplicationsHandler(RequestHandler):
     """
     Принимает zip архив приложения, создаёт для него
@@ -42,7 +37,7 @@ class ApplicationsHandler(RequestHandler):
 
 
 def make_app():
-    return Application([(r"/", BaseHandler), (r"/create/", ApplicationsHandler),])
+    return Application([(r"/create/", ApplicationsHandler),])
 
 
 if __name__ == "__main__":
