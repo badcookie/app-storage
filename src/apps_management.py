@@ -35,7 +35,7 @@ async def add_application(app_id: str) -> None:
     venv_dir = os.path.join(app_dir, "venv")
 
     app_data = {
-        "type": "python 3",
+        "type": "python 3.7",
         "path": app_dir,
         "module": "application",
         "home": venv_dir,
