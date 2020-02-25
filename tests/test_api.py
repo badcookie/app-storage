@@ -17,13 +17,6 @@ def docker_client():
 
 @pytest.fixture()
 def unit_service(docker_client):
-    # containers = docker_client.containers.list()
-    # runner_container = [
-    #     *filter(lambda item: "runner" in item.name and "build" in item.name, containers)
-    # ]
-    # network = (
-    #     "host" if not runner_container else f"container:/{runner_container[0].name}"
-    # )
     image = docker_client.images.pull(UNIT_IMAGE)
     volume = {APPS_DIR: {"bind": "/apps/", "mode": "rw"}}
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
