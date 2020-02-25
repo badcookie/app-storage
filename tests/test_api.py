@@ -31,11 +31,11 @@ def unit_service(docker_client):
         command=command,
         volumes=volume,
         name="test_unit_service",
+        auto_remove=True,
     )
     container.start()
     yield container
     container.stop()
-    container.remove()
 
 
 @pytest.fixture
