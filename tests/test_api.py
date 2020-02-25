@@ -83,21 +83,21 @@ async def test_successful_app_validation(
     request_data = prepare_send_file_request("valid_app")
     assert request_data
 
-    # for _ in range(apps_count):
-    #     response = await http_client.fetch(
-    #         app_creation_url, method="POST", **request_data, raise_error=False
-    #     )
-    #     print(unit_service.logs())
-    #     assert response.code == 200
-    #
-    #     response_body = response.body.decode()
-    #     app_data = json.loads(response_body)
-    #
-    #     app_port = app_data["port"]
-    #     app_url = f"http://localhost:{app_port}/"
-    #     app_response = await http_client.fetch(app_url, method="GET", raise_error=False)
-    #     response_data = app_response.body.decode()
-    #     assert response_data == "It works"
+    for _ in range(apps_count):
+        response = await http_client.fetch(
+            app_creation_url, method="POST", **request_data, raise_error=False
+        )
+        print(unit_service.logs())
+        assert response.code == 200
+
+        response_body = response.body.decode()
+        app_data = json.loads(response_body)
+
+        app_port = app_data["port"]
+        app_url = f"http://localhost:{app_port}/"
+        app_response = await http_client.fetch(app_url, method="GET", raise_error=False)
+        response_data = app_response.body.decode()
+        assert response_data == "It works"
 
 
 @pytest.mark.gen_test
