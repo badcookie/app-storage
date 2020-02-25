@@ -36,9 +36,9 @@ async def add_application(app_id: str) -> None:
 
     app_data = {
         "type": "python 3",
-        "path": app_dir,
+        "path": f"/apps/{app_id}/",
         "module": "application",
-        # "home": venv_dir,
+        "home": f"/apps/{app_id}/venv/",
     }
     request_body = json.dumps(app_data)
     url = f"{BASE_URL}/applications/{app_id}/"
