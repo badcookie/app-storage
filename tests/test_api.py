@@ -18,7 +18,9 @@ def docker_client():
 @pytest.fixture()
 def unit_service(docker_client):
     containers = docker_client.containers.list()
-    runner_container = [*filter(lambda item: "runner" in item.name, containers)]
+    runner_container = [
+        *filter(lambda item: "runner" in item.name and "build" in item.name, containers)
+    ]
     network = (
         "host" if not runner_container else f"container:/{runner_container[0].name}"
     )
@@ -27,7 +29,7 @@ def unit_service(docker_client):
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
         image=image,
-        network="host",
+        network=network,
         command=command,
         volumes=volume,
         name="test_unit_service",
