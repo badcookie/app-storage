@@ -45,6 +45,7 @@ async def add_application(app_id: str) -> None:
     response = await client.fetch(
         url, body=request_body, method="PUT", raise_error=False
     )
+    print(os.environ.get("PYTHONHOME"))
     print(response.body.decode())
 
 
