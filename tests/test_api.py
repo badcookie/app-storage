@@ -18,6 +18,7 @@ def docker_client():
 @pytest.fixture()
 def unit_service(docker_client):
     image = docker_client.images.pull(UNIT_IMAGE)
+    print("UNIT SERVICE APPS DIR:", APPS_DIR)
     volume = {APPS_DIR: {"bind": "/apps/", "mode": "rw"}}
     command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
     container = docker_client.containers.create(
