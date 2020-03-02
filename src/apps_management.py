@@ -47,6 +47,8 @@ async def add_application(app_id: str) -> None:
     apps_dir = "/apps/"
     app_dir = os.path.join(apps_dir, app_id)
     venv_dir = os.path.join(app_dir, "venv")
+    print("UNIT app dir:", app_dir)
+    print("UNIT venv dir:", venv_dir)
 
     app_data = {
         "type": "python 3",
@@ -54,6 +56,7 @@ async def add_application(app_id: str) -> None:
         "module": "application",
         "home": venv_dir,
     }
+    print("App data:", app_data)
     request_body = json.dumps(app_data)
     url = f"{BASE_URL}/applications/{app_id}/"
     response = await client.fetch(

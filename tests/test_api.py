@@ -88,12 +88,12 @@ async def test_successful_app_validation(
         assert response_data == "It works"
 
 
-@pytest.mark.gen_test
-async def test_failed_app_validation(
-    prepare_send_file_request, http_client, app_creation_url
-):
-    request_data = prepare_send_file_request("app_with_empty_file")
-    response = await http_client.fetch(
-        app_creation_url, method="POST", raise_error=False, **request_data
-    )
-    assert response.code == 500
+# @pytest.mark.gen_test
+# async def test_failed_app_validation(
+#     prepare_send_file_request, http_client, app_creation_url
+# ):
+#     request_data = prepare_send_file_request("app_with_empty_file")
+#     response = await http_client.fetch(
+#         app_creation_url, method="POST", raise_error=False, **request_data
+#     )
+#     assert response.code == 500

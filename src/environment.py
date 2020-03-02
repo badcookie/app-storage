@@ -35,8 +35,9 @@ def load_app_requirements(app_dir: str) -> None:
     """
 
     venv_dir = path.join(app_dir, "venv")
+    print("Venv dir:", venv_dir)
     venv.create(venv_dir, with_pip=True)
-
+    print("App dir before pip install:", app_dir)
     subprocess.check_call(
         ["venv/bin/pip", "install", "-r", "requirements.txt"], cwd=app_dir
     )
@@ -86,7 +87,10 @@ def create_application_environment(package: "ZipFile") -> str:
     """
 
     app_dir = init_app()
+    print("App dir:", app_dir)
     apps_path, app_id = path.split(app_dir)
+    print("Apps path:", apps_path)
+    print("App id:", app_id)
 
     package.extractall(app_dir)
     load_app_requirements(app_dir)
