@@ -11,6 +11,7 @@ idna==2.10                # via requests
 motor==2.1.0              # via -r requirements.in
 pydantic==1.5.1           # via -r requirements.in
 pymongo==3.10.1           # via motor
+python-dotenv==0.14.0     # via -r requirements.in
 requests==2.24.0          # via docker
 six==1.15.0               # via docker, websocket-client
 tornado==6.0.4            # via -r requirements.in

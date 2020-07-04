@@ -2,3 +2,4 @@ motor
 tornado
 docker
 pydantic
+python-dotenv
