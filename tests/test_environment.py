@@ -3,9 +3,9 @@ from unittest.mock import patch
 
 import pytest
 from server import errors
-from server.consts import APP_ID_CREATION_TRIES_COUNT, APPS_DIR
 from server.environment import (create_application_environment,
                                 generate_app_id, init_app, validate_package)
+from server.settings import settings
 
 
 def test_valid_package(get_package, validation_rules):
@@ -39,10 +39,10 @@ def test_successful_app_init_from_first_try():
 
 @patch("server.environment.generate_app_id")
 def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
-    app_ids = [generate_app_id() for _ in range(APP_ID_CREATION_TRIES_COUNT)]
+    app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids[:-1]:
-        os.mkdir(os.path.join(APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.APPS_DIR, uid))
 
     items_generator = get_items_generator(app_ids)
 
@@ -53,10 +53,10 @@ def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_gener
 
 @patch("server.environment.generate_app_id")
 def test_failed_app_init(app_id_generator_mock, get_items_generator):
-    app_ids = [generate_app_id() for _ in range(APP_ID_CREATION_TRIES_COUNT)]
+    app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids:
-        os.mkdir(os.path.join(APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.APPS_DIR, uid))
 
     items_generator = get_items_generator(app_ids)
 
@@ -70,7 +70,7 @@ def test_environment_creation(get_package, validation_rules):
     validate_package(package, validation_rules)
 
     app_id = create_application_environment(package)
-    app_dirpath = os.path.join(APPS_DIR, app_id)
+    app_dirpath = os.path.join(settings.APPS_DIR, app_id)
     assert os.path.exists(app_dirpath)
 
     extracted_files = os.listdir(app_dirpath)

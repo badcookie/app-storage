@@ -1,4 +1,4 @@
-from server.consts import MAX_PACKAGE_SIZE_MB
+from server.settings import settings
 
 
 class RequiredFileNotFoundError(Exception):
@@ -6,7 +6,7 @@ class RequiredFileNotFoundError(Exception):
 
 
 class InvalidPackageSizeError(Exception):
-    reason = f"Package size should be less than {MAX_PACKAGE_SIZE_MB} MB"
+    reason = f"Package size should be less than {settings.MAX_PACKAGE_SIZE_MB} MB"
 
 
 class EmptyRequiredFileError(Exception):

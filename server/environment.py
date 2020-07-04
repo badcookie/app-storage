@@ -5,8 +5,8 @@ from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from server.consts import APP_ID_CREATION_TRIES_COUNT, APP_ID_LENGTH, APPS_DIR
 from server.errors import ApplicationInitError
+from server.settings import settings
 
 
 def validate_package(package: "ZipFile", rules: List[dict]) -> None:
@@ -43,7 +43,7 @@ def load_app_requirements(app_dir: str) -> None:
 
 
 def generate_app_id() -> str:
-    return uuid4().hex[:APP_ID_LENGTH]
+    return uuid4().hex[: settings.APP_ID_LENGTH]
 
 
 def init_app() -> str:
@@ -60,11 +60,11 @@ def init_app() -> str:
     """
 
     def try_to_create_dir(try_count: int) -> str:
-        if try_count == APP_ID_CREATION_TRIES_COUNT:
+        if try_count == settings.APP_ID_CREATION_TRIES_COUNT:
             raise ApplicationInitError
 
         application_id = generate_app_id()
-        app_dirpath = path.join(APPS_DIR, application_id)
+        app_dirpath = path.join(settings.APPS_DIR, application_id)
 
         if not path.exists(app_dirpath):
             mkdir(app_dirpath)

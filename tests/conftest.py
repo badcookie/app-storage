@@ -4,7 +4,7 @@ from zipfile import ZipFile
 
 import pytest
 from server.app import make_app
-from server.consts import APPS_DIR
+from server.settings import settings
 from server.validation import VALIDATION_RULES
 
 
@@ -33,8 +33,8 @@ def get_package():
 
 @pytest.fixture(scope="session", autouse=True)
 def create_apps_directory():
-    yield os.mkdir(APPS_DIR)
-    shutil.rmtree(APPS_DIR)
+    yield os.mkdir(settings.APPS_DIR)
+    shutil.rmtree(settings.APPS_DIR)
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
-from server.consts import MAX_PACKAGE_SIZE_MB
 from server.errors import (EmptyRequiredFileError, InvalidPackageSizeError,
                            RequiredFileNotFoundError)
+from server.settings import settings
 from server.utils import get_package_size_bytes, mb_to_bytes
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ def required_files_included(package: "ZipFile") -> bool:
 
 def package_size_valid(package: "ZipFile") -> bool:
     package_size_bytes = get_package_size_bytes(package)
-    max_valid_size_bytes = mb_to_bytes(MAX_PACKAGE_SIZE_MB)
+    max_valid_size_bytes = mb_to_bytes(settings.MAX_PACKAGE_SIZE_MB)
     return package_size_bytes < max_valid_size_bytes
 
 

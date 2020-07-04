@@ -4,7 +4,7 @@ from os import path
 import docker
 import pytest
 from requests import Request
-from server.consts import APPS_DIR, UNIT_IMAGE, UNIT_PORT
+from server.settings import APPS_DIR, UNIT_IMAGE, UNIT_PORT
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, "fixtures")

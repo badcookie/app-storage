@@ -3,8 +3,8 @@ from zipfile import ZipFile
 
 from more_itertools import one
 from server.apps_management import register_app
-from server.consts import APP_PORT
 from server.environment import create_application_environment, validate_package
+from server.settings import settings
 from server.validation import VALIDATION_RULES
 from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
@@ -42,5 +42,5 @@ def make_app():
 
 if __name__ == "__main__":
     app = make_app()
-    app.listen(APP_PORT)
+    app.listen(settings.APP_PORT)
     IOLoop.current().start()

@@ -2,10 +2,10 @@ import json
 import os
 from socket import AF_INET, SOCK_STREAM, socket
 
-from server.consts import UNIT_PORT
+from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-BASE_URL = f"http://localhost:{UNIT_PORT}/config"
+BASE_URL = f"http://localhost:{settings.UNIT_PORT}/config"
 
 
 client = AsyncHTTPClient()
