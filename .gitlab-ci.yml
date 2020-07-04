@@ -1,0 +1,8 @@
+test:
+  tags:
+    - test
+  script:
+    - python3 -m venv venv/
+    - source venv/bin/activate
+    - make sync
+    - make test
