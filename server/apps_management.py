@@ -5,7 +5,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-BASE_URL = f"http://localhost:{settings.UNIT_PORT}/config"
+BASE_URL = f"http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config"
 
 
 client = AsyncHTTPClient()
@@ -13,7 +13,7 @@ client = AsyncHTTPClient()
 
 def get_unused_port() -> int:
     with socket(AF_INET, SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
+        sock.bind((settings.UNIT_HOST, 0))
         return sock.getsockname()[1]
 
 
@@ -27,7 +27,7 @@ async def add_listener(app_id: str) -> int:
     """
 
     app_port = get_unused_port()
-    url = f"{BASE_URL}/listeners/127.0.0.1:{app_port}/"
+    url = f"{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/"
     listener_data = {"pass": f"applications/{app_id}"}
     request_body = json.dumps(listener_data)
     response = await client.fetch(
