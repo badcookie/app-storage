@@ -3,8 +3,8 @@ import shutil
 from zipfile import ZipFile
 
 import pytest
+from server.app import make_app
 from server.consts import APPS_DIR
-from server.server import make_app
 from server.validation import VALIDATION_RULES
 
 

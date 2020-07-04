@@ -1,0 +1,5 @@
+pre-commit
+requests
+pytest
+pytest-asyncio
+pytest-tornado
