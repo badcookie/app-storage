@@ -5,8 +5,8 @@ from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from src.consts import APP_ID_CREATION_TRIES_COUNT, APP_ID_LENGTH, APPS_DIR
-from src.errors import ApplicationInitError
+from server.consts import APP_ID_CREATION_TRIES_COUNT, APP_ID_LENGTH, APPS_DIR
+from server.errors import ApplicationInitError
 
 
 def validate_package(package: "ZipFile", rules: List[dict]) -> None:

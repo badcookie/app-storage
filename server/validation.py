@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from src.consts import MAX_PACKAGE_SIZE_MB
-from src.errors import (EmptyRequiredFileError, InvalidPackageSizeError,
-                        RequiredFileNotFoundError)
-from src.utils import get_package_size_bytes, mb_to_bytes
+from server.consts import MAX_PACKAGE_SIZE_MB
+from server.errors import (EmptyRequiredFileError, InvalidPackageSizeError,
+                           RequiredFileNotFoundError)
+from server.utils import get_package_size_bytes, mb_to_bytes
 
 if TYPE_CHECKING:
     from zipfile import ZipFile

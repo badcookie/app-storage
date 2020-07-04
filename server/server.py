@@ -2,10 +2,10 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from more_itertools import one
-from src.apps_management import register_app
-from src.consts import APP_PORT
-from src.environment import create_application_environment, validate_package
-from src.validation import VALIDATION_RULES
+from server.apps_management import register_app
+from server.consts import APP_PORT
+from server.environment import create_application_environment, validate_package
+from server.validation import VALIDATION_RULES
 from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler

@@ -3,9 +3,9 @@ import shutil
 from zipfile import ZipFile
 
 import pytest
-from src.consts import APPS_DIR
-from src.server import make_app
-from src.validation import VALIDATION_RULES
+from server.consts import APPS_DIR
+from server.server import make_app
+from server.validation import VALIDATION_RULES
 
 
 @pytest.fixture
