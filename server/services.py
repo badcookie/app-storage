@@ -50,7 +50,7 @@ def load_app_requirements(app_dir: str) -> None:
     )
 
 
-def generate_app_id() -> str:
+def generate_app_uid() -> str:
     return uuid4().hex[: settings.APP_ID_LENGTH]
 
 
@@ -71,8 +71,8 @@ def create_app_directory() -> str:
         if try_count == settings.APP_ID_CREATION_TRIES_COUNT:
             raise ApplicationInitError
 
-        application_id = generate_app_id()
-        app_dirpath = path.join(settings.APPS_DIR, application_id)
+        application_uid = generate_app_uid()
+        app_dirpath = path.join(settings.APPS_DIR, application_uid)
 
         if not path.exists(app_dirpath):
             mkdir(app_dirpath)
@@ -95,12 +95,12 @@ def create_application_environment(package: 'ZipFile') -> str:
     """
 
     app_dir = create_app_directory()
-    apps_path, app_id = path.split(app_dir)
+    apps_path, app_uid = path.split(app_dir)
 
     package.extractall(app_dir)
     load_app_requirements(app_dir)
 
-    return app_id
+    return app_uid
 
 
 def get_unused_port() -> int:
@@ -109,35 +109,32 @@ def get_unused_port() -> int:
         return sock.getsockname()[1]
 
 
-async def add_unit_listener(app_id: str) -> int:
+async def add_unit_listener(app_uid: str) -> int:
     """
     Делает запрос n/unit на добавление адреса, по
     которому будет доступно приложение.
 
-    :param app_id: id приложения.
+    :param app_uid: uid приложения.
     :return: порт, который приложение будет слушать.
     """
 
     app_port = get_unused_port()
     url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
-    listener_data = {'pass': f'applications/{app_id}'}
+    listener_data = {'pass': f'applications/{app_uid}'}
     request_body = json.dumps(listener_data)
-    response = await client.fetch(
-        url, body=request_body, method='PUT', raise_error=False
-    )
-    print(response.body.decode())
+    await client.fetch(url, body=request_body, method='PUT', raise_error=False)
     return app_port
 
 
-async def add_unit_application(app_id: str) -> None:
+async def add_unit_application(app_uid: str) -> None:
     """
     Делает запрос n/unit на добавление приложения в конфигурацию.
 
-    :param app_id: id приложения.
+    :param app_uid: id приложения.
     """
 
     apps_dir = '/apps/'
-    app_dir = os.path.join(apps_dir, app_id)
+    app_dir = os.path.join(apps_dir, app_uid)
     venv_dir = os.path.join(app_dir, 'venv')
 
     app_data = {
@@ -147,22 +144,19 @@ async def add_unit_application(app_id: str) -> None:
         'home': venv_dir,
     }
     request_body = json.dumps(app_data)
-    url = f'{BASE_URL}/applications/{app_id}/'
-    response = await client.fetch(
-        url, body=request_body, method='PUT', raise_error=False
-    )
-    print(response.body.decode())
+    url = f'{BASE_URL}/applications/{app_uid}/'
+    await client.fetch(url, body=request_body, method='PUT', raise_error=False)
 
 
-async def register_app(app_id: str) -> int:
+async def register_app(app_uid: str) -> int:
     """
     Точка входа для регистрации приложения в n/unit.
     Делает запрос на обновление конфигурации.
 
-    :param app_id: id приложения.
+    :param app_uid: id приложения.
     :return: порт, который приложение будет слушать.
     """
 
-    await add_unit_application(app_id)
-    app_port = await add_unit_listener(app_id)
+    await add_unit_application(app_uid)
+    app_port = await add_unit_listener(app_uid)
     return app_port

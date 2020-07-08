@@ -8,7 +8,7 @@ services:
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-9000}"]
     volumes:
-      - apps-volume:/apps/
+      - apps_data:/apps/
 
   server:
     container_name: "${PROJECT_NAME:-app_storage}_server"
@@ -19,7 +19,18 @@ services:
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     volumes:
-      - apps-volume:/apps/
+      - apps_data:/apps/
+
+  db:
+    image: mongo
+    volumes:
+      - db_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - ${DB_PORT:-27017}:27017
 
 volumes:
-  apps-volume: {}
+  apps_data: {}
+  db_data: {}
