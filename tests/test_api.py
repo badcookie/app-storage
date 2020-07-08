@@ -7,10 +7,10 @@ from requests import Request
 from server.settings import settings
 
 TESTS_DIR = path.dirname(__file__)
-FIXTURES_DIR = path.join(TESTS_DIR, "fixtures")
+FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def docker_client():
     return docker.from_env()
 
@@ -18,14 +18,14 @@ def docker_client():
 @pytest.fixture()
 def unit_service(docker_client):
     image = docker_client.images.pull(settings.UNIT_IMAGE)
-    volume = {settings.APPS_DIR: {"bind": "/apps/", "mode": "rw"}}
-    command = f"unitd --no-daemon --control 127.0.0.1:{settings.UNIT_PORT}"
+    volume = {settings.APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
+    command = f'unitd --no-daemon --control 127.0.0.1:{settings.UNIT_PORT}'
     container = docker_client.containers.create(
         image=image,
-        network="host",
+        network='host',
         command=command,
         volumes=volume,
-        name="test_unit_service",
+        name='test_unit_service',
         auto_remove=True,
     )
     container.start()
@@ -35,7 +35,7 @@ def unit_service(docker_client):
 
 @pytest.fixture
 def app_creation_url(base_url):
-    return f"{base_url}/create/"
+    return f'{base_url}/create/'
 
 
 @pytest.fixture
@@ -43,57 +43,57 @@ def prepare_send_file_request(get_package, app_creation_url):
     def _(filename: str) -> dict:
         get_package(filename)
 
-        filename_with_ext = f"{filename}.zip"
+        filename_with_ext = f'{filename}.zip'
         filepath = path.join(FIXTURES_DIR, filename_with_ext)
         absolute_filepath = path.abspath(filepath)
 
-        zipfile = open(absolute_filepath, "rb")
-        files = {"zipfile": zipfile}
+        zipfile = open(absolute_filepath, 'rb')
+        files = {'zipfile': zipfile}
 
         request = Request(url=app_creation_url, files=files)
         prepared_request = request.prepare()
-        content_type = prepared_request.headers.get("Content-Type")
-        headers = {"Content-Type": content_type}
+        content_type = prepared_request.headers.get('Content-Type')
+        headers = {'Content-Type': content_type}
 
         return {
-            "body": prepared_request.body,
-            "headers": headers,
+            'body': prepared_request.body,
+            'headers': headers,
         }
 
     return _
 
 
+@pytest.mark.usefixtures('unit_service')
 @pytest.mark.gen_test(timeout=50)
 async def test_successful_app_validation(
-    unit_service, prepare_send_file_request, http_client, app_creation_url,
+    prepare_send_file_request, http_client, app_creation_url,
 ):
-    apps_count = 3
-    request_data = prepare_send_file_request("valid_app")
+    apps_count = 2
+    request_data = prepare_send_file_request('valid_app')
     assert request_data
 
     for _ in range(apps_count):
         response = await http_client.fetch(
-            app_creation_url, method="POST", **request_data, raise_error=False
+            app_creation_url, method='POST', **request_data, raise_error=False
         )
-        print(unit_service.logs())
         assert response.code == 200
 
         response_body = response.body.decode()
         app_data = json.loads(response_body)
 
-        app_port = app_data["port"]
-        app_url = f"http://localhost:{app_port}/"
-        app_response = await http_client.fetch(app_url, method="GET", raise_error=False)
+        app_port = app_data['port']
+        app_url = f'http://localhost:{app_port}/'
+        app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
         response_data = app_response.body.decode()
-        assert response_data == "It works"
+        assert response_data == 'It works'
 
 
 @pytest.mark.gen_test
 async def test_failed_app_validation(
     prepare_send_file_request, http_client, app_creation_url
 ):
-    request_data = prepare_send_file_request("app_with_empty_file")
+    request_data = prepare_send_file_request('app_with_empty_file')
     response = await http_client.fetch(
-        app_creation_url, method="POST", raise_error=False, **request_data
+        app_creation_url, method='POST', raise_error=False, **request_data
     )
     assert response.code == 500
