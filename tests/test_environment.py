@@ -6,7 +6,7 @@ from server import exceptions
 from server.services import (
     create_app_directory,
     create_application_environment,
-    generate_app_id,
+    generate_app_uid,
     validate_package,
 )
 from server.settings import settings
@@ -41,9 +41,9 @@ def test_successful_app_init_from_first_try():
     assert os.path.exists(app_dir)
 
 
-@patch('server.services.generate_app_id')
+@patch('server.services.generate_app_uid')
 def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
-    app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
+    app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids[:-1]:
         os.mkdir(os.path.join(settings.APPS_DIR, uid))
@@ -55,9 +55,9 @@ def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_gener
     assert os.path.exists(app_dir)
 
 
-@patch('server.services.generate_app_id')
+@patch('server.services.generate_app_uid')
 def test_failed_app_init(app_id_generator_mock, get_items_generator):
-    app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
+    app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids:
         os.mkdir(os.path.join(settings.APPS_DIR, uid))
