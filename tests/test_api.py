@@ -63,8 +63,7 @@ def prepare_send_file_request(get_package, app_creation_url):
     return _
 
 
-@pytest.mark.skip
-@pytest.mark.gen_test(timeout=30)
+@pytest.mark.gen_test(timeout=50)
 async def test_successful_app_validation(
     unit_service, prepare_send_file_request, http_client, app_creation_url,
 ):
@@ -89,7 +88,6 @@ async def test_successful_app_validation(
         assert response_data == "It works"
 
 
-@pytest.mark.skip
 @pytest.mark.gen_test
 async def test_failed_app_validation(
     prepare_send_file_request, http_client, app_creation_url
