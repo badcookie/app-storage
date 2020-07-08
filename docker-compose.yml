@@ -10,12 +10,12 @@ services:
     volumes:
       - apps-volume:/apps/
 
-  backend:
-    container_name: "${PROJECT_NAME:-app_storage}_backend"
+  server:
+    container_name: "${PROJECT_NAME:-app_storage}_server"
     build:
       context: .
-      dockerfile: docker/backend/Dockerfile
-    image: "${PROJECT_NAME:-app_storage}:backend"
+      dockerfile: Dockerfile
+    image: "${PROJECT_NAME:-app_storage}:server"
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     volumes:
