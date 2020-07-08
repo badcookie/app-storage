@@ -1,9 +1,0 @@
-test:
-  tags:
-    - test
-  script:
-    - python3 -m venv venv/
-    - source venv/bin/activate
-    - pip install pip-tools
-    - make sync
-    - make test
