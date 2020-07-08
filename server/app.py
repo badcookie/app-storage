@@ -2,8 +2,11 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from more_itertools import one
-from server.apps_management import register_app
-from server.environment import create_application_environment, validate_package
+from server.services import (
+    create_application_environment,
+    register_app,
+    validate_package,
+)
 from server.settings import settings
 from server.validation import VALIDATION_RULES
 from tornado.httputil import HTTPServerRequest
@@ -37,7 +40,7 @@ class ApplicationsHandler(RequestHandler):
 
 
 def make_app():
-    return Application([(r"/create/", ApplicationsHandler),])
+    return Application([(r"/create/", ApplicationsHandler)])
 
 
 if __name__ == "__main__":

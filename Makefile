@@ -2,19 +2,12 @@
 
 
 test:
-	@python -m pytest tests/
+	@export PYTHONPATH=.
+	@pytest -s
 
-run:
-	@docker-compose up -d
+install:
+	@poetry install
 
-stop:
-	@docker-compose down
-
-compile:
-	@cd requirements
-	@pip-compile requirements.in
-	@pip-compile requirements.dev.in
-
-sync:
-	@cd requirements
-	@pip-sync requirements.txt requirements.dev.txt
+setup:
+	@cd deploy
+	@ansible-playbook -i hosts local_setup.yml

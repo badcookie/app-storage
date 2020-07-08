@@ -1,15 +1,27 @@
+from functools import reduce
 from typing import TYPE_CHECKING
 
-from server.errors import (EmptyRequiredFileError, InvalidPackageSizeError,
-                           RequiredFileNotFoundError)
+from server.exceptions import (
+    EmptyRequiredFileError,
+    InvalidPackageSizeError,
+    RequiredFileNotFoundError,
+)
 from server.settings import settings
-from server.utils import get_package_size_bytes, mb_to_bytes
 
 if TYPE_CHECKING:
     from zipfile import ZipFile
 
 
 required_files = ["requirements.txt", "application.py"]
+
+
+def mb_to_bytes(mb: int) -> int:
+    return mb * 1024 * 1024
+
+
+def get_package_size_bytes(package: "ZipFile") -> int:
+    files = package.filelist
+    return reduce(lambda acc, file: acc + file.file_size, files, 0)
 
 
 def required_files_included(package: "ZipFile") -> bool:
@@ -33,7 +45,7 @@ def required_files_not_empty(package: "ZipFile") -> bool:
 
 
 VALIDATION_RULES = [
-    {"constraint": required_files_included, "exception": RequiredFileNotFoundError,},
-    {"constraint": package_size_valid, "exception": InvalidPackageSizeError,},
-    {"constraint": required_files_not_empty, "exception": EmptyRequiredFileError,},
+    {"constraint": required_files_included, "exception": RequiredFileNotFoundError},
+    {"constraint": package_size_valid, "exception": InvalidPackageSizeError},
+    {"constraint": required_files_not_empty, "exception": EmptyRequiredFileError},
 ]
