@@ -5,7 +5,8 @@ services:
     container_name: "${PROJECT_NAME:-app_storage}_unit"
     image: "${UNIT_IMAGE:-nginx/unit:1.15.0-python3.7}"
     network_mode: host
-    command: ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-9000}"]
+    command:
+      ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-9000}"]
     volumes:
       - apps-volume:/apps/
 

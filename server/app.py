@@ -14,11 +14,11 @@ from tornado.ioloop import IOLoop
 from tornado.web import Application, RequestHandler
 
 
-def get_request_file(request: "HTTPServerRequest") -> "ZipFile":
+def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
     files = request.files
-    file_data = one(files.get("zipfile"))
-    file_body = file_data["body"]
-    return ZipFile(BytesIO(file_body), "r")
+    file_data = one(files.get('zipfile'))
+    file_body = file_data['body']
+    return ZipFile(BytesIO(file_body), 'r')
 
 
 class ApplicationsHandler(RequestHandler):
@@ -35,15 +35,15 @@ class ApplicationsHandler(RequestHandler):
         app_id = create_application_environment(file)
         app_port = await register_app(app_id)
 
-        app_data = {"uid": app_id, "port": app_port}
+        app_data = {'uid': app_id, 'port': app_port}
         self.write(app_data)
 
 
 def make_app():
-    return Application([(r"/create/", ApplicationsHandler)])
+    return Application([(r'/create/', ApplicationsHandler)])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = make_app()
     app.listen(settings.APP_PORT)
     IOLoop.current().start()

@@ -17,9 +17,9 @@ def validation_rules():
 def get_package():
     cache = {}
 
-    def getter(package_name: str) -> "ZipFile":
-        fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", package_name)
-        package_path = shutil.make_archive(fixture_path, "zip", fixture_path)
+    def getter(package_name: str) -> 'ZipFile':
+        fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures', package_name)
+        package_path = shutil.make_archive(fixture_path, 'zip', fixture_path)
         package = ZipFile(package_path)
         cache[package_path] = package
         return package
@@ -31,7 +31,7 @@ def get_package():
     os.remove(package_dir)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def create_apps_directory():
     yield os.mkdir(settings.APPS_DIR)
     shutil.rmtree(settings.APPS_DIR)

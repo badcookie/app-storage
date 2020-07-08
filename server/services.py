@@ -12,12 +12,12 @@ from server.exceptions import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-BASE_URL = f"http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config"
+BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
 client = AsyncHTTPClient()
 
 
-def validate_package(package: "ZipFile", rules: List[dict]) -> None:
+def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
     """
     Проверяет zip архив на соответствие условиям. Если хотя бы
     одно не выполняется, выбрасывает соответствующее исключение.
@@ -29,9 +29,9 @@ def validate_package(package: "ZipFile", rules: List[dict]) -> None:
     """
 
     for rule in rules:
-        constraint_is_fulfilled = rule["constraint"]
+        constraint_is_fulfilled = rule['constraint']
         if not constraint_is_fulfilled(package):
-            raise rule["exception"]
+            raise rule['exception']
 
 
 def load_app_requirements(app_dir: str) -> None:
@@ -42,11 +42,11 @@ def load_app_requirements(app_dir: str) -> None:
     :param app_dir: путь до приложения.
     """
 
-    venv_dir = path.join(app_dir, "venv")
+    venv_dir = path.join(app_dir, 'venv')
     venv.create(venv_dir, with_pip=True)
 
     subprocess.check_call(
-        ["venv/bin/pip", "install", "-r", "requirements.txt"], cwd=app_dir
+        ['venv/bin/pip', 'install', '-r', 'requirements.txt'], cwd=app_dir
     )
 
 
@@ -83,7 +83,7 @@ def create_app_directory() -> str:
     return try_to_create_dir(try_count=0)
 
 
-def create_application_environment(package: "ZipFile") -> str:
+def create_application_environment(package: 'ZipFile') -> str:
     """
     Точка входа для создания приложения в файловой системе.
     Создаёт директорию приложения со своим окружением,
@@ -119,11 +119,11 @@ async def add_unit_listener(app_id: str) -> int:
     """
 
     app_port = get_unused_port()
-    url = f"{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/"
-    listener_data = {"pass": f"applications/{app_id}"}
+    url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_data = {'pass': f'applications/{app_id}'}
     request_body = json.dumps(listener_data)
     response = await client.fetch(
-        url, body=request_body, method="PUT", raise_error=False
+        url, body=request_body, method='PUT', raise_error=False
     )
     print(response.body.decode())
     return app_port
@@ -136,20 +136,20 @@ async def add_unit_application(app_id: str) -> None:
     :param app_id: id приложения.
     """
 
-    apps_dir = "/apps/"
+    apps_dir = '/apps/'
     app_dir = os.path.join(apps_dir, app_id)
-    venv_dir = os.path.join(app_dir, "venv")
+    venv_dir = os.path.join(app_dir, 'venv')
 
     app_data = {
-        "type": "python 3",
-        "path": app_dir,
-        "module": "application",
-        "home": venv_dir,
+        'type': 'python 3',
+        'path': app_dir,
+        'module': 'application',
+        'home': venv_dir,
     }
     request_body = json.dumps(app_data)
-    url = f"{BASE_URL}/applications/{app_id}/"
+    url = f'{BASE_URL}/applications/{app_id}/'
     response = await client.fetch(
-        url, body=request_body, method="PUT", raise_error=False
+        url, body=request_body, method='PUT', raise_error=False
     )
     print(response.body.decode())
 

@@ -13,25 +13,25 @@ from server.settings import settings
 
 
 def test_valid_package(get_package, validation_rules):
-    package = get_package("valid_app")
+    package = get_package('valid_app')
     validate_package(package, validation_rules)
     assert True
 
 
 def test_package_validation_with_missing_required_file(get_package, validation_rules):
-    package = get_package("app_with_missing_file")
+    package = get_package('app_with_missing_file')
     with pytest.raises(exceptions.RequiredFileNotFoundError):
         validate_package(package, validation_rules)
 
 
 def test_package_validation_with_empty_required_file(get_package, validation_rules):
-    package = get_package("app_with_empty_file")
+    package = get_package('app_with_empty_file')
     with pytest.raises(exceptions.EmptyRequiredFileError):
         validate_package(package, validation_rules)
 
 
 def test_package_with_invalid_size(get_package, validation_rules):
-    package = get_package("heavy_app")
+    package = get_package('heavy_app')
     with pytest.raises(exceptions.InvalidPackageSizeError):
         validate_package(package, validation_rules)
 
@@ -41,7 +41,7 @@ def test_successful_app_init_from_first_try():
     assert os.path.exists(app_dir)
 
 
-@patch("server.services.generate_app_id")
+@patch('server.services.generate_app_id')
 def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
     app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
@@ -55,7 +55,7 @@ def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_gener
     assert os.path.exists(app_dir)
 
 
-@patch("server.services.generate_app_id")
+@patch('server.services.generate_app_id')
 def test_failed_app_init(app_id_generator_mock, get_items_generator):
     app_ids = [generate_app_id() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
@@ -70,7 +70,7 @@ def test_failed_app_init(app_id_generator_mock, get_items_generator):
 
 
 def test_environment_creation(get_package, validation_rules):
-    package = get_package("valid_app")
+    package = get_package('valid_app')
     validate_package(package, validation_rules)
 
     app_id = create_application_environment(package)
@@ -80,8 +80,8 @@ def test_environment_creation(get_package, validation_rules):
     extracted_files = os.listdir(app_dirpath)
     assert len(extracted_files) != 0
 
-    venv_path = os.path.join(app_dirpath, "venv")
+    venv_path = os.path.join(app_dirpath, 'venv')
     assert os.path.exists(venv_path)
 
-    bin_path = os.path.join(venv_path, "bin")
-    assert "flask" in os.listdir(bin_path)
+    bin_path = os.path.join(venv_path, 'bin')
+    assert 'flask' in os.listdir(bin_path)
