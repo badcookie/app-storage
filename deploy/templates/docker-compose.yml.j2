@@ -2,27 +2,27 @@ version: "3.5"
 
 services:
   unit:
-    container_name: "${PROJECT_NAME:-app_storage}_unit"
-    image: "${UNIT_IMAGE:-nginx/unit:1.15.0-python3.7}"
+    container_name: "${PROJECT_NAME}_unit"
+    image: "${UNIT_IMAGE}"
     network_mode: host
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-9000}"]
     volumes:
-      - apps_data:/apps/
+      - apps_data:{{ apps_dir }}
 
   server:
-    container_name: "${PROJECT_NAME:-app_storage}_server"
+    container_name: "${PROJECT_NAME}_server"
     build:
       context: .
-      dockerfile: Dockerfile
-    image: "${PROJECT_NAME:-app_storage}:server"
+      dockerfile: {{ server_dockerfile_path }}
+    image: "${PROJECT_NAME}:server"
     ports:
       - "${APP_PORT:-8000}:${APP_PORT:-8000}"
     volumes:
-      - apps_data:/apps/
+      - apps_data:{{ apps_dir }}
 
   db:
-    image: mongo
+    image: {{ db_image }}
     volumes:
       - db_data:/data/db
     environment:

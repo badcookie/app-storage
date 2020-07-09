@@ -1,0 +1,15 @@
+- hosts: local
+  gather_facts: no
+
+  tasks:
+    - include: "tasks/render_templates.yml"
+
+    - name: install dependencies
+      shell: make install
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: run services
+      shell: "docker-compose up -d {{ db_compose_name }} {{ unit_compose_name }}"
+      args:
+        chdir: "{{ project_path }}"

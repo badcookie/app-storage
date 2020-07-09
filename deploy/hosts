@@ -1,0 +1,21 @@
+localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python3
+
+[local]
+localhost
+
+[local:vars]
+app_port=8000
+unit_port=9000
+unit_image=nginx/unit:1.15.0-python3.7
+unit_compose_name=unit
+project_name=app_storage
+db_port=27017
+db_host=localhost
+db_username=badcookie
+db_password=password
+db_image=mongo
+db_compose_name=db
+apps_dir=/apps/
+server_dockerfile_path=Dockerfile
+project_path=..
+server_script_path=server/app.py
