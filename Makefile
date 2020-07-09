@@ -1,8 +1,13 @@
+.ONESHELL: all
+
+
 test:
-	@python -m pytest tests/
+	@export PYTHONPATH=.
+	@pytest -s
 
-run:
-	@docker-compose up -d
+install:
+	@poetry install
 
-stop:
-	@docker-compose down
+setup:
+	@cd deploy
+	@ansible-playbook -i hosts local_setup.yml
