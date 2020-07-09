@@ -12,6 +12,7 @@ FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 def routes(base_url):
     return {
         'app_create': lambda: f'{base_url}/application/',
+        'app_delete': lambda app_id: f'{base_url}/application/{app_id}',
     }
 
 
@@ -49,9 +50,13 @@ async def test_successful_app_validation(
     request_data = prepare_send_file_request('valid_app')
     assert request_data
 
-    url = routes['app_create']()
+    create_url = routes['app_create']()
     response = await http_client.fetch(
-        url, method='POST', **request_data, raise_error=False, request_timeout=90,
+        create_url,
+        method='POST',
+        **request_data,
+        raise_error=False,
+        request_timeout=90,
     )
     assert response.code == 200
 
@@ -64,9 +69,17 @@ async def test_successful_app_validation(
     response_data = app_response.body.decode()
     assert response_data == 'It works'
 
+    app_id = app_data['id']
     repo = app.settings['app_repository']
-    saved_app = await repo.get(id=app_data['id'])
+    saved_app = await repo.get(id=app_id)
     assert saved_app and saved_app.port == app_port and saved_app.uid == app_data['uid']
+
+    delete_url = routes['app_delete'](app_id)
+    response = await http_client.fetch(delete_url, method='DELETE', raise_error=False,)
+    assert response.code == 204
+
+    deleted_app = await repo.get(id=app_id)
+    assert deleted_app is None
 
 
 @pytest.mark.gen_test

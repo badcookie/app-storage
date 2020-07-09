@@ -34,25 +34,34 @@ class ApplicationsHandler(web.RequestHandler):
     и сохраняет в бд данные о приложении.
     """
 
-    async def post(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.repository = self.application.settings['app_repository']
+
+    async def post(self, _):
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
 
         app_uid = create_application_environment(file)
         app_port = await register_app(app_uid)
 
-        app_repo = self.application.settings['app_repository']
         app_instance = Application(uid=app_uid, port=app_port)
-        app_id = await app_repo.add(app_instance)
+        app_id = await self.repository.add(app_instance)
 
         app_data = {'uid': app_uid, 'port': app_port, 'id': app_id}
         self.write(app_data)
+
+    async def delete(self, app_id: str):
+        await self.repository.delete(id=app_id)
+        self.set_status(204)
 
 
 def make_app():
     db = MotorClient().default
     settings = {'app_repository': ApplicationRepository(db), 'db': db}
-    return web.Application([(r'/application/', ApplicationsHandler)], **settings)
+    return web.Application(
+        [(r'/application/([^/]+)?', ApplicationsHandler)], **settings
+    )
 
 
 if __name__ == '__main__':
