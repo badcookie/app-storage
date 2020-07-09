@@ -94,6 +94,7 @@ async def test_successful_app_lifecycle(
         await http_client.fetch(app_url, method='GET', raise_error=False)
 
 
+@pytest.mark.usefixtures('db_service')
 @pytest.mark.gen_test
 async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     url = routes['app_create']()
@@ -110,9 +111,8 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     )
     assert response.code == 400
 
-    # FIXME
-    # invalid_delete_url = routes['app_delete'](some_uid)
-    # response = await http_client.fetch(
-    #     invalid_delete_url, method='DELETE', raise_error=False
-    # )
-    # assert response.code == 404
+    invalid_delete_url = routes['app_delete'](some_uid)
+    response = await http_client.fetch(
+        invalid_delete_url, method='DELETE', raise_error=False, request_timeout=90
+    )
+    assert response.code == 404
