@@ -5,17 +5,6 @@ from server.repository import ApplicationRepository
 from server.settings import settings
 
 
-@pytest.fixture()
-def db_service(docker_client):
-    image = docker_client.images.pull(settings.DB_IMAGE)
-    container = docker_client.containers.create(
-        image=image, network='host', name='test_db_service', auto_remove=True,
-    )
-    container.start()
-    yield container
-    container.stop()
-
-
 @pytest.fixture
 async def db_connection(db_service):
     client = AsyncIOMotorClient(settings.DB.DB_HOST, settings.DB.DB_PORT)

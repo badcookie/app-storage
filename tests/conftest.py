@@ -19,6 +19,36 @@ def docker_client():
     return docker.from_env()
 
 
+@pytest.fixture()
+def unit_service(docker_client):
+    image = docker_client.images.pull(settings.UNIT_IMAGE)
+    volume = {settings.APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
+    command = f'unitd --no-daemon --control 127.0.0.1:{settings.UNIT_PORT}'
+
+    container = docker_client.containers.create(
+        image=image,
+        network='host',
+        command=command,
+        volumes=volume,
+        name='test_unit_service',
+        auto_remove=True,
+    )
+    container.start()
+    yield container
+    container.stop()
+
+
+@pytest.fixture()
+def db_service(docker_client):
+    image = docker_client.images.pull(settings.DB_IMAGE)
+    container = docker_client.containers.create(
+        image=image, network='host', name='test_db_service', auto_remove=True,
+    )
+    container.start()
+    yield container
+    container.stop()
+
+
 @pytest.fixture
 def get_package():
     cache = {}

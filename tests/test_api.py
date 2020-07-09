@@ -3,29 +3,9 @@ from os import path
 
 import pytest
 from requests import Request
-from server.settings import settings
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
-
-
-@pytest.fixture()
-def unit_service(docker_client):
-    image = docker_client.images.pull(settings.UNIT_IMAGE)
-    volume = {settings.APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
-    command = f'unitd --no-daemon --control 127.0.0.1:{settings.UNIT_PORT}'
-
-    container = docker_client.containers.create(
-        image=image,
-        network='host',
-        command=command,
-        volumes=volume,
-        name='test_unit_service',
-        auto_remove=True,
-    )
-    container.start()
-    yield container
-    container.stop()
 
 
 @pytest.fixture
@@ -61,7 +41,7 @@ def prepare_send_file_request(get_package, routes):
     return _
 
 
-@pytest.mark.usefixtures('unit_service')
+@pytest.mark.usefixtures('unit_service', 'db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_successful_app_validation(
     prepare_send_file_request, http_client, routes,
