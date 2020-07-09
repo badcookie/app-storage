@@ -6,8 +6,9 @@ from more_itertools import one
 from motor.motor_tornado import MotorClient
 from server.domain import Application
 from server.repository import ApplicationRepository
-from server.services import (
+from server.services import (  # unregister_app,
     create_application_environment,
+    destroy_application_environment,
     register_app,
     validate_package,
 )
@@ -38,7 +39,11 @@ class ApplicationsHandler(web.RequestHandler):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['app_repository']
 
-    async def post(self, _):
+    async def post(self, param):
+        if param is not None:
+            self.set_status(400, reason='Parameter is not accepted.')
+            await self.finish()
+
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
 
@@ -49,10 +54,20 @@ class ApplicationsHandler(web.RequestHandler):
         app_id = await self.repository.add(app_instance)
 
         app_data = {'uid': app_uid, 'port': app_port, 'id': app_id}
+        self.set_status(201)
         self.write(app_data)
 
     async def delete(self, app_id: str):
+        app_to_delete = await self.repository.get(id=app_id)
+        if app_to_delete is None:
+            self.set_status(404, reason='App not found.')
+            await self.finish()
+
+        uid = app_to_delete.uid
+        destroy_application_environment(uid)
+        # await unregister_app(uid)
         await self.repository.delete(id=app_id)
+
         self.set_status(204)
 
 

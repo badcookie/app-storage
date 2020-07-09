@@ -3,6 +3,7 @@ from os import path
 
 import pytest
 from requests import Request
+from server.settings import settings
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
@@ -58,7 +59,7 @@ async def test_successful_app_validation(
         raise_error=False,
         request_timeout=90,
     )
-    assert response.code == 200
+    assert response.code == 201
 
     response_body = response.body.decode()
     app_data = json.loads(response_body)
@@ -70,16 +71,24 @@ async def test_successful_app_validation(
     assert response_data == 'It works'
 
     app_id = app_data['id']
+    app_uid = app_data['uid']
+
+    app_path = path.join(settings.APPS_DIR, app_uid)
+
     repo = app.settings['app_repository']
     saved_app = await repo.get(id=app_id)
-    assert saved_app and saved_app.port == app_port and saved_app.uid == app_data['uid']
+    assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
+
+    assert path.exists(app_path)
 
     delete_url = routes['app_delete'](app_id)
-    response = await http_client.fetch(delete_url, method='DELETE', raise_error=False,)
+    response = await http_client.fetch(delete_url, method='DELETE', raise_error=False)
     assert response.code == 204
 
     deleted_app = await repo.get(id=app_id)
     assert deleted_app is None
+
+    assert not path.exists(app_path)
 
 
 @pytest.mark.gen_test
@@ -90,3 +99,10 @@ async def test_failed_app_validation(prepare_send_file_request, http_client, rou
         url, method='POST', raise_error=False, **request_data,
     )
     assert response.code == 500
+
+    some_uid = 'abc'
+    invalid_url = f'{url}{some_uid}'
+    response = await http_client.fetch(
+        invalid_url, method='POST', raise_error=False, **request_data
+    )
+    assert response.code == 400

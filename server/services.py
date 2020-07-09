@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import venv
 from os import mkdir, path
@@ -160,3 +161,12 @@ async def register_app(app_uid: str) -> int:
     await add_unit_application(app_uid)
     app_port = await add_unit_listener(app_uid)
     return app_port
+
+
+def destroy_application_environment(app_uid: str) -> None:
+    app_dirpath = path.join(settings.APPS_DIR, app_uid)
+    shutil.rmtree(app_dirpath)
+
+
+# async def unregister_app(app_uid: str) -> None:
+#     pass
