@@ -10,5 +10,5 @@ class Application(Entity):
     port: int
 
 
-class ApplicationReadOnly(Entity):
-    id: int
+class ApplicationReadOnly(Application):
+    id: str

@@ -1,18 +1,12 @@
 import json
 from os import path
 
-import docker
 import pytest
 from requests import Request
 from server.settings import settings
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
-
-
-@pytest.fixture(scope='module')
-def docker_client():
-    return docker.from_env()
 
 
 @pytest.fixture()
@@ -68,7 +62,7 @@ def prepare_send_file_request(get_package, routes):
 
 
 @pytest.mark.usefixtures('unit_service')
-@pytest.mark.gen_test(timeout=50)
+@pytest.mark.gen_test(timeout=90)
 async def test_successful_app_validation(
     prepare_send_file_request, http_client, routes,
 ):
@@ -79,7 +73,7 @@ async def test_successful_app_validation(
     url = routes['app_create']()
     for _ in range(apps_count):
         response = await http_client.fetch(
-            url, method='POST', **request_data, raise_error=False
+            url, method='POST', **request_data, raise_error=False, request_timeout=90,
         )
         assert response.code == 200
 
@@ -98,6 +92,6 @@ async def test_failed_app_validation(prepare_send_file_request, http_client, rou
     url = routes['app_create']()
     request_data = prepare_send_file_request('app_with_empty_file')
     response = await http_client.fetch(
-        url, method='POST', raise_error=False, **request_data
+        url, method='POST', raise_error=False, **request_data,
     )
     assert response.code == 500

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     UNIT_HOST: str = '127.0.0.1'
     DB: 'DBSettings' = DBSettings(_env_file=env_path)
     UNIT_IMAGE: str = 'nginx/unit:1.15.0-python3.7'
+    DB_IMAGE: str = 'mongo:latest'
     APP_ID_LENGTH: int = 8
     MAX_PACKAGE_SIZE_MB: int = 5
     APP_ID_CREATION_TRIES_COUNT: int = 5

@@ -2,6 +2,7 @@ import os
 import shutil
 from zipfile import ZipFile
 
+import docker
 import pytest
 from server.app import make_app
 from server.settings import settings
@@ -11,6 +12,11 @@ from server.validation import VALIDATION_RULES
 @pytest.fixture
 def validation_rules():
     return VALIDATION_RULES
+
+
+@pytest.fixture(scope='session')
+def docker_client():
+    return docker.from_env()
 
 
 @pytest.fixture
