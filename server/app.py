@@ -6,10 +6,11 @@ from more_itertools import one
 from motor.motor_tornado import MotorClient
 from server.domain import Application
 from server.repository import ApplicationRepository
-from server.services import (  # unregister_app,
+from server.services import (
     create_application_environment,
     destroy_application_environment,
     register_app,
+    unregister_app,
     validate_package,
 )
 from server.settings import settings as config
@@ -59,13 +60,16 @@ class ApplicationsHandler(web.RequestHandler):
 
     async def delete(self, app_id: str):
         app_to_delete = await self.repository.get(id=app_id)
+
         if app_to_delete is None:
             self.set_status(404, reason='App not found.')
             await self.finish()
 
         uid = app_to_delete.uid
+        port = app_to_delete.port
+
+        await unregister_app(uid, port)
         destroy_application_environment(uid)
-        # await unregister_app(uid)
         await self.repository.delete(id=app_id)
 
         self.set_status(204)

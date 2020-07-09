@@ -45,7 +45,7 @@ def prepare_send_file_request(get_package, routes):
 
 @pytest.mark.usefixtures('unit_service', 'db_service')
 @pytest.mark.gen_test(timeout=90)
-async def test_successful_app_validation(
+async def test_successful_app_lifecycle(
     prepare_send_file_request, http_client, routes, app,
 ):
     request_data = prepare_send_file_request('valid_app')
@@ -90,9 +90,12 @@ async def test_successful_app_validation(
 
     assert not path.exists(app_path)
 
+    with pytest.raises(ConnectionRefusedError):
+        await http_client.fetch(app_url, method='GET', raise_error=False)
+
 
 @pytest.mark.gen_test
-async def test_failed_app_validation(prepare_send_file_request, http_client, routes):
+async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     url = routes['app_create']()
     request_data = prepare_send_file_request('app_with_empty_file')
     response = await http_client.fetch(
@@ -101,8 +104,15 @@ async def test_failed_app_validation(prepare_send_file_request, http_client, rou
     assert response.code == 500
 
     some_uid = 'abc'
-    invalid_url = f'{url}{some_uid}'
+    invalid_post_url = f'{url}{some_uid}'
     response = await http_client.fetch(
-        invalid_url, method='POST', raise_error=False, **request_data
+        invalid_post_url, method='POST', raise_error=False, **request_data
     )
     assert response.code == 400
+
+    # FIXME
+    # invalid_delete_url = routes['app_delete'](some_uid)
+    # response = await http_client.fetch(
+    #     invalid_delete_url, method='DELETE', raise_error=False
+    # )
+    # assert response.code == 404
