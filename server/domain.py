@@ -11,4 +11,6 @@ class Application(Entity):
 
 
 class ApplicationReadOnly(Application):
+    """Модель для чтения из хранилища"""
+
     id: str
