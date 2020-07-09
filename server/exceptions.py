@@ -15,3 +15,7 @@ class EmptyRequiredFileError(Exception):
 
 class ApplicationInitError(Exception):
     reason = 'Exceeded tries count for app creation: lack of unique ids'
+
+
+class InternalServerError(Exception):
+    pass

@@ -110,34 +110,13 @@ def get_unused_port() -> int:
         return sock.getsockname()[1]
 
 
-async def add_unit_listener(app_uid: str) -> int:
+async def register_app(app_uid: str) -> int:
     """
-    Делает запрос n/unit на добавление адреса, по
-    которому будет доступно приложение.
+    Регистрирует приложение в n/unit, делая
+    запросы на обновление конфигурации.
 
     :param app_uid: uid приложения.
     :return: порт, который приложение будет слушать.
-    """
-
-    app_port = get_unused_port()
-    url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
-    listener_data = {'pass': f'applications/{app_uid}'}
-    request_body = json.dumps(listener_data)
-    response = await client.fetch(
-        url, body=request_body, method='PUT', raise_error=False
-    )
-
-    if response.code != 200:
-        raise Exception('Failed to create unit listener.')
-
-    return app_port
-
-
-async def add_unit_application(app_uid: str) -> None:
-    """
-    Делает запрос n/unit на добавление приложения в конфигурацию.
-
-    :param app_uid: id приложения.
     """
 
     apps_dir = '/apps/'
@@ -151,50 +130,39 @@ async def add_unit_application(app_uid: str) -> None:
         'home': venv_dir,
     }
     request_body = json.dumps(app_data)
-    url = f'{BASE_URL}/applications/{app_uid}/'
-    response = await client.fetch(
-        url, body=request_body, method='PUT', raise_error=False
-    )
+    app_url = f'{BASE_URL}/applications/{app_uid}/'
+    await client.fetch(app_url, body=request_body, method='PUT')
 
-    if response.code != 200:
-        raise Exception('Failed to create unit app.')
+    app_port = get_unused_port()
+    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_data = {'pass': f'applications/{app_uid}'}
+    request_body = json.dumps(listener_data)
+    await client.fetch(listener_url, body=request_body, method='PUT')
 
-
-async def register_app(app_uid: str) -> int:
-    """
-    Точка входа для регистрации приложения в n/unit.
-    Делает запрос на обновление конфигурации.
-
-    :param app_uid: id приложения.
-    :return: порт, который приложение будет слушать.
-    """
-
-    await add_unit_application(app_uid)
-    app_port = await add_unit_listener(app_uid)
     return app_port
 
 
 def destroy_application_environment(app_uid: str) -> None:
+    """
+    Удаляет окружение приложения из фс.
+
+    :param app_uid: uid приложения.
+    """
+
     app_dirpath = path.join(settings.APPS_DIR, app_uid)
     shutil.rmtree(app_dirpath)
 
 
-async def remove_unit_application(app_uid: str) -> None:
-    url = f'{BASE_URL}/applications/{app_uid}/'
-    response = await client.fetch(url, method='DELETE', raise_error=False)
-
-    if response.code != 200:  # TODO: exception
-        raise Exception('Failed to remove unit app.')
-
-
-async def remove_unit_listener(app_port: int) -> None:
-    url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
-    response = await client.fetch(url, method='DELETE', raise_error=False)
-
-    if response.code != 200:
-        raise Exception('Failed to remove unit listener.')
-
-
 async def unregister_app(app_uid: str, app_port: int) -> None:
-    await remove_unit_listener(app_port)
-    await remove_unit_application(app_uid)
+    """
+    Удаляет данные о приложении из конфигурации n/unit.
+
+    :param app_uid: uid приложения.
+    :param app_port: порт, который приложение слушает.
+    """
+
+    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    await client.fetch(listener_url, method='DELETE')
+
+    app_url = f'{BASE_URL}/applications/{app_uid}/'
+    await client.fetch(app_url, method='DELETE')

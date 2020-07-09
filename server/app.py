@@ -42,8 +42,7 @@ class ApplicationsHandler(web.RequestHandler):
 
     async def post(self, param):
         if param is not None:
-            self.set_status(400, reason='Parameter is not accepted.')
-            await self.finish()
+            raise web.HTTPError(400)
 
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
@@ -62,8 +61,7 @@ class ApplicationsHandler(web.RequestHandler):
         app_to_delete = await self.repository.get(id=app_id)
 
         if app_to_delete is None:
-            self.set_status(404, reason='App not found.')
-            await self.finish()
+            raise web.HTTPError(404)
 
         uid = app_to_delete.uid
         port = app_to_delete.port

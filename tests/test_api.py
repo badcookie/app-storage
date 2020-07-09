@@ -95,7 +95,7 @@ async def test_successful_app_lifecycle(
 
 
 @pytest.mark.usefixtures('db_service')
-@pytest.mark.gen_test
+@pytest.mark.gen_test(timeout=90)
 async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     url = routes['app_create']()
     request_data = prepare_send_file_request('app_with_empty_file')
