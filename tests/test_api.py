@@ -44,27 +44,29 @@ def prepare_send_file_request(get_package, routes):
 @pytest.mark.usefixtures('unit_service', 'db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_successful_app_validation(
-    prepare_send_file_request, http_client, routes,
+    prepare_send_file_request, http_client, routes, app,
 ):
-    apps_count = 2
     request_data = prepare_send_file_request('valid_app')
     assert request_data
 
     url = routes['app_create']()
-    for _ in range(apps_count):
-        response = await http_client.fetch(
-            url, method='POST', **request_data, raise_error=False, request_timeout=90,
-        )
-        assert response.code == 200
+    response = await http_client.fetch(
+        url, method='POST', **request_data, raise_error=False, request_timeout=90,
+    )
+    assert response.code == 200
 
-        response_body = response.body.decode()
-        app_data = json.loads(response_body)
+    response_body = response.body.decode()
+    app_data = json.loads(response_body)
 
-        app_port = app_data['port']
-        app_url = f'http://localhost:{app_port}/'
-        app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
-        response_data = app_response.body.decode()
-        assert response_data == 'It works'
+    app_port = app_data['port']
+    app_url = f'http://localhost:{app_port}/'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    response_data = app_response.body.decode()
+    assert response_data == 'It works'
+
+    repo = app.settings['app_repository']
+    saved_app = await repo.get(id=app_data['id'])
+    assert saved_app and saved_app.port == app_port and saved_app.uid == app_data['uid']
 
 
 @pytest.mark.gen_test

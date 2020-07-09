@@ -4,6 +4,7 @@ from zipfile import ZipFile
 
 import docker
 import pytest
+from motor.motor_asyncio import AsyncIOMotorClient
 from server.app import make_app
 from server.settings import settings
 from server.validation import VALIDATION_RULES
@@ -47,6 +48,14 @@ def db_service(docker_client):
     container.start()
     yield container
     container.stop()
+
+
+@pytest.fixture
+async def db_connection(db_service):
+    client = AsyncIOMotorClient(settings.DB.DB_HOST, settings.DB.DB_PORT)
+    db = client.test_database
+    yield db
+    await client.drop_database(db)
 
 
 @pytest.fixture

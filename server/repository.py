@@ -34,10 +34,7 @@ class NoSQLRepository(Repository):
     async def add(self, entity: 'Entity') -> str:
         uuid = shortuuid.uuid()
         entity_data = {**entity.dict(), 'id': uuid}
-        try:
-            await self._db[self.collection].insert_one(entity_data)
-        except Exception as error:
-            print(error)
+        await self._db[self.collection].insert_one(entity_data)
         return uuid
 
     async def get(self, **params) -> 'Entity':

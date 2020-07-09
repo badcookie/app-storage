@@ -1,16 +1,6 @@
 import pytest
-from motor.motor_asyncio import AsyncIOMotorClient
 from server.domain import Application
 from server.repository import ApplicationRepository
-from server.settings import settings
-
-
-@pytest.fixture
-async def db_connection(db_service):
-    client = AsyncIOMotorClient(settings.DB.DB_HOST, settings.DB.DB_PORT)
-    db = client.test_database
-    yield db
-    await client.drop_database(db)
 
 
 @pytest.fixture
