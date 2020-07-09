@@ -11,7 +11,7 @@ FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 @pytest.fixture
 def routes(base_url):
     return {
-        'app_create': lambda: f'{base_url}/create/',
+        'app_create': lambda: f'{base_url}/application/',
     }
 
 

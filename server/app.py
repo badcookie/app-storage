@@ -51,15 +51,13 @@ class ApplicationsHandler(web.RequestHandler):
 
 def make_app():
     db = MotorClient().default
-    settings = {
-        'app_repository': ApplicationRepository(db),
-        'db': db,
-    }
-    return web.Application([(r'/create/', ApplicationsHandler)], **settings)
+    settings = {'app_repository': ApplicationRepository(db), 'db': db}
+    return web.Application([(r'/application/', ApplicationsHandler)], **settings)
 
 
 if __name__ == '__main__':
     app = make_app()
+
     try:
         app.listen(config.APP_PORT)
         logging.info(f'Server started on port: {config.APP_PORT}')
