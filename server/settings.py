@@ -7,6 +7,12 @@ from pydantic import BaseSettings
 env_path = find_dotenv()
 
 
+class Environment:
+    DEVELOPMENT = 'development'
+    TEST = 'test'
+    PRODUCTION = 'production'
+
+
 class DBSettings(BaseSettings):
     DB_HOST: str
     DB_PORT: int = 27017
@@ -15,6 +21,7 @@ class DBSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
+    ENVIRONMENT: 'Environment'
     PROJECT_NAME: str = 'app_storage'
     APP_PORT: int = 8000
     UNIT_PORT: int = 9000
