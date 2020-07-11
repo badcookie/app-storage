@@ -1,5 +1,6 @@
 .ONESHELL: all
 
+F=tests/
 
 install:
 	@poetry install
@@ -12,4 +13,8 @@ setup:
 
 test:
 	@export PYTHONPATH=.
-	@pytest -s
+	@pytest -s $(F)
+
+start-backend:
+	@export PYTHONPATH=.
+	@python server/app.py

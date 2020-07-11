@@ -1,5 +1,6 @@
-import logging
+import logging.config
 from io import BytesIO
+from os import path
 from zipfile import ZipFile
 
 from more_itertools import one
@@ -19,6 +20,7 @@ from tornado import web
 from tornado.httputil import HTTPServerRequest
 from tornado.ioloop import IOLoop
 
+logging.config.dictConfig(config.logging_config)
 logger = logging.getLogger('app')
 
 
@@ -29,7 +31,12 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
     return ZipFile(BytesIO(file_body), 'r')
 
 
-class ApplicationsHandler(web.RequestHandler):
+class IndexHandler(web.RequestHandler):
+    async def get(self):
+        return self.render('index.html')
+
+
+class ApplicationHandler(web.RequestHandler):
     """
     Принимает zip архив приложения, создаёт для него
     окружение, обновляет конфигурацию веб-сервера
@@ -76,9 +83,15 @@ class ApplicationsHandler(web.RequestHandler):
 def make_app():
     db = MotorClient().default
     settings = {'app_repository': ApplicationRepository(db), 'db': db}
-    return web.Application(
-        [(r'/application/([^/]+)?', ApplicationsHandler)], **settings
-    )
+
+    template_path = path.join(config.BASE_DIR, 'client', 'public')
+
+    routes = [
+        (r'/', IndexHandler),
+        (r'/application/([^/]+)?', ApplicationHandler),
+    ]
+
+    return web.Application(routes, template_path=template_path, debug=True, **settings,)
 
 
 if __name__ == '__main__':
@@ -86,7 +99,7 @@ if __name__ == '__main__':
 
     try:
         app.listen(config.APP_PORT)
-        logging.info(f'Server started on port: {config.APP_PORT}')
+        logger.info('Server started on port %s', config.APP_PORT)
         IOLoop.current().start()
     except (KeyboardInterrupt, SystemExit):
-        logging.info('Server graceful shutdown')
+        logger.info('Server graceful shutdown')
