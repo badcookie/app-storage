@@ -7,7 +7,7 @@ from pydantic import BaseSettings
 env_path = find_dotenv()
 
 
-class Environment:
+class Environment(str):
     DEVELOPMENT = 'development'
     TEST = 'test'
     PRODUCTION = 'production'
