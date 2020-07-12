@@ -14,7 +14,7 @@ from server.services import (
     unregister_app,
     validate_package,
 )
-from server.settings import settings as config
+from server.settings import Environment, settings as config
 from server.validation import VALIDATION_RULES
 from tornado import web
 from tornado.httputil import HTTPServerRequest
@@ -84,14 +84,23 @@ def make_app():
     db = MotorClient().default
     settings = {'app_repository': ApplicationRepository(db), 'db': db}
 
-    template_path = path.join(config.BASE_DIR, 'client', 'public')
+    static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
+    template_path = path.join(config.BASE_DIR, 'client', 'build')
+
+    debug = config.ENVIRONMENT == Environment.DEVELOPMENT
 
     routes = [
         (r'/', IndexHandler),
         (r'/application/([^/]+)?', ApplicationHandler),
     ]
 
-    return web.Application(routes, template_path=template_path, debug=True, **settings,)
+    return web.Application(
+        routes,
+        static_path=static_path,
+        template_path=template_path,
+        debug=debug,
+        **settings,
+    )
 
 
 if __name__ == '__main__':
