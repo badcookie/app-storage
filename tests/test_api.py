@@ -44,7 +44,6 @@ def prepare_send_file_request(get_package, routes):
     return _
 
 
-@pytest.mark.usefixtures('unit_service', 'db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_successful_app_lifecycle(
     prepare_send_file_request, http_client, routes, app,
@@ -95,7 +94,6 @@ async def test_successful_app_lifecycle(
         await http_client.fetch(app_url, method='GET', raise_error=False)
 
 
-@pytest.mark.usefixtures('db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     url = routes['app_create']()
@@ -119,7 +117,7 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     assert response.code == 404
 
 
-@pytest.mark.gen_test
+@pytest.mark.skip
 async def test_index(http_client, routes):
     url = routes['index']()
     response = await http_client.fetch(url, method='GET', raise_error=False)
