@@ -31,12 +31,23 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
     return ZipFile(BytesIO(file_body), 'r')
 
 
-class IndexHandler(web.RequestHandler):
-    async def get(self):
-        return self.render('index.html')
+# class IndexHandler(web.RequestHandler):
+#     async def get(self):
+#         return self.render('index.html')
 
 
-class ApplicationHandler(web.RequestHandler):
+class BaseHandler(web.RequestHandler):
+    def set_default_headers(self) -> None:
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+
+class ApplicationHandler(BaseHandler):
     """
     Принимает zip архив приложения, создаёт для него
     окружение, обновляет конфигурацию веб-сервера
@@ -90,7 +101,7 @@ def make_app():
     debug = config.ENVIRONMENT == Environment.DEVELOPMENT
 
     routes = [
-        (r'/', IndexHandler),
+        # (r'/', IndexHandler),
         (r'/application/([^/]+)?', ApplicationHandler),
     ]
 

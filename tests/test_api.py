@@ -115,10 +115,3 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
         invalid_delete_url, method='DELETE', raise_error=False, request_timeout=90
     )
     assert response.code == 404
-
-
-@pytest.mark.skip
-async def test_index(http_client, routes):
-    url = routes['index']()
-    response = await http_client.fetch(url, method='GET', raise_error=False)
-    assert response.code == 200
