@@ -5,7 +5,10 @@ const appSlice = createSlice({
   name: 'apps',
   initialState: [],
   reducers: {
-      addApps: (state, action) => state.push(...action.payload),
+      addApps: (state, action) => {
+          console.log(action);
+          // state.push(...action.payload);
+      },
   },
 });
 

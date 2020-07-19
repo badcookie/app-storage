@@ -1,3 +1,4 @@
+import json
 import logging.config
 from io import BytesIO
 from os import path
@@ -31,20 +32,20 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
     return ZipFile(BytesIO(file_body), 'r')
 
 
-# class IndexHandler(web.RequestHandler):
-#     async def get(self):
-#         return self.render('index.html')
-
-
 class BaseHandler(web.RequestHandler):
     def set_default_headers(self) -> None:
+        super().set_default_headers()
         self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Access-Control-Allow-Headers', 'x-requested-with')
         self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
 
     def options(self):
         self.set_status(204)
         self.finish()
+
+
+class IndexHandler(BaseHandler):
+    async def get(self):
+        return self.render('index.html')
 
 
 class ApplicationHandler(BaseHandler):
@@ -57,6 +58,10 @@ class ApplicationHandler(BaseHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['app_repository']
+
+    async def get(self, *_):
+        apps = await self.repository.list()
+        return self.write(json.dumps(apps))
 
     async def post(self, param):
         if param is not None:
@@ -101,8 +106,8 @@ def make_app():
     debug = config.ENVIRONMENT == Environment.DEVELOPMENT
 
     routes = [
-        # (r'/', IndexHandler),
-        (r'/application/([^/]+)?', ApplicationHandler),
+        (r'/', IndexHandler),
+        (r'/applications/([^/]+)?', ApplicationHandler),
     ]
 
     return web.Application(

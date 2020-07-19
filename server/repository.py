@@ -42,8 +42,12 @@ class NoSQLRepository(Repository):
         return self.model(**entity) if entity else None
 
     async def list(self) -> List['Entity']:
-        entities = await self._db[self.collection].find().to_list(length=None)
-        return [self.model(**entity) for entity in entities]
+        try:
+            entities = await self._db[self.collection].find().to_list(length=None)
+            return [self.model(**entity) for entity in entities]
+        except Exception as err:
+            print(err)
+            return []
 
     async def delete(self, **params) -> None:
         await self._db[self.collection].delete_one(params)

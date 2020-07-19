@@ -18,3 +18,7 @@ test:
 start-backend:
 	@export PYTHONPATH=.
 	@python server/app.py
+
+start-frontend:
+	@cd client
+	@npm run start

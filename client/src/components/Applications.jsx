@@ -1,33 +1,30 @@
 import axios from 'axios';
-import { connect } from 'react-redux';
 import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 
 import { actions } from '../slices';
 
 
-const mapStateToProps = (state) => {
-  const { apps } = state;
-  return { apps };
-};
+const getApps = (state) => state.apps;
 
-const { addApps } = actions.apps;
-const actionMakers = { addApps };
+const Applications = () => {
+  const dispatch = useDispatch();
+  const addApps = () => dispatch(actions.apps.addApps());
 
-
-const Applications = (props) => {
-  const { apps, addApps } = props;
+  const apps = useSelector(getApps);
 
   useEffect(() => {
-      axios.get('http://localhost:8000/applications')
+      const url = `http://${document.location.hostname}:8000/applications/`;
+      console.log(url);
+      axios.get(url)
         .then((response) => {
           const apps = response.data;
-          console.log(apps);
+          console.log('what we received', apps);
           addApps(apps);
       });
-  }, []);
+  });
 
   return <ul>{apps.map((app) => <li key={app.id}>{app.id}</li>)}</ul>;
 };
 
-
-export default connect(mapStateToProps, actionMakers)(Applications);
+export default Applications;
