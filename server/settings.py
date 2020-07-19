@@ -16,7 +16,7 @@ class Environment(str):
 class DBSettings(BaseSettings):
     HOST: str
     PORT: int = 27017
-    USER: str
+    USER_: str
     PASSWORD: str
 
 
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APP_PORT: int = 8000
     UNIT_PORT: int = 9000
     UNIT_HOST: str = '127.0.0.1'
-    DB: 'DBSettings' = DBSettings(_env_file=env_path)
+    DB: 'DBSettings'
     APP_ID_LENGTH: int = 8
     MAX_PACKAGE_SIZE_MB: int = 5
     APP_ID_CREATION_TRIES_COUNT: int = 5
