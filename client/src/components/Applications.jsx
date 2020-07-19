@@ -9,22 +9,19 @@ const getApps = (state) => state.apps;
 
 const Applications = () => {
   const dispatch = useDispatch();
-  const addApps = () => dispatch(actions.apps.addApps());
-
+  const addApps = (apps) => dispatch(actions.apps.addApps(apps));
   const apps = useSelector(getApps);
 
   useEffect(() => {
-      const url = `http://${document.location.hostname}:8000/applications/`;
-      console.log(url);
-      axios.get(url)
-        .then((response) => {
-          const apps = response.data;
-          console.log('what we received', apps);
-          addApps(apps);
-      });
-  });
+    const url = `http://${document.location.hostname}:8000/applications/`;
+    axios.get(url)
+      .then((response) => {
+        const apps = response.data;
+        addApps(apps);
+    });
+  }, []);
 
-  return <ul>{apps.map((app) => <li key={app.id}>{app.id}</li>)}</ul>;
+  return <ul>{apps.map((app) => <li key={app.id}>{app.uid} {app.port}</li>)}</ul>;
 };
 
 export default Applications;
