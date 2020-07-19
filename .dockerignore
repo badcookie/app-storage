@@ -5,6 +5,5 @@ temp/
 README.md
 Dockerfile
 .gitignore
-requirements.dev.txt
 .pre-commit-config.yaml
 .gitlab-ci.yml
