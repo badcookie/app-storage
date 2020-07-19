@@ -8,15 +8,14 @@ install:
 	@npm install
 
 setup:
-	@cd deploy
-	@ansible-playbook -i hosts local_setup.yml
+	@python setup.py
 
 test:
-	@export PYTHONPATH=.
+	@export PYTHONPATH="${PYTHONPATH}:."
 	@pytest -s $(F)
 
 start-backend:
-	@export PYTHONPATH=.
+	@export PYTHONPATH="${PYTHONPATH}:."
 	@python server/app.py
 
 start-frontend:
