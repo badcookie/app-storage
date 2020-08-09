@@ -60,14 +60,24 @@ class ApplicationHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.services = self.application.settings['services']
 
-    async def get(self, *_):
-        apps = await self.services.repository.list()
-        fake_apps = [
-            {'id': 1, 'port': 1234, 'uid': 'abc'},
-            {'id': 2, 'port': 1499, 'uid': 'def'},
-        ]
-        apps.extend(fake_apps)
-        return self.write(json.dumps(apps))
+    async def get(self, param):
+        repository = self.services.repository
+        query_data = (
+            await repository.list() if param is None else await repository.get(id=param)
+        )
+
+        if query_data is None:
+            raise web.HTTPError(404)
+
+        if param is None:
+            fake_apps = [
+                {'id': 1, 'port': 1234, 'uid': 'abc'},
+                {'id': 2, 'port': 1499, 'uid': 'def'},
+            ]
+            query_data.extend(fake_apps)
+
+        result = json.dumps(query_data)
+        return self.write(result)
 
     async def post(self, param):
         if param is not None:
@@ -79,10 +89,10 @@ class ApplicationHandler(BaseHandler):
         app_uid = create_application_environment(file)
         app_port = await register_app(app_uid)
 
-        app_instance = Application(uid=app_uid, port=app_port)
-        app_id = await self.services.repository.add(app_instance)
+        app = Application(uid=app_uid, port=app_port)
+        app_id = await self.services.repository.add(app)
 
-        app_data = {'uid': app_uid, 'port': app_port, 'id': app_id}
+        app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
         self.set_status(201)
         self.write(app_data)
 
