@@ -14,10 +14,13 @@ test:
 	@export PYTHONPATH="${PYTHONPATH}:."
 	@pytest -s $(F)
 
-start-backend:
+server:
 	@export PYTHONPATH="${PYTHONPATH}:."
 	@python server/app.py
 
-start-frontend:
+client:
 	@cd client
 	@npm run start
+
+
+.PHONY: client server

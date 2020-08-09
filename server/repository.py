@@ -45,7 +45,7 @@ class NoSQLRepository(Repository):
         try:
             entities = await self._db[self.collection].find().to_list(length=None)
             return [self.model(**entity) for entity in entities]
-        except Exception as err:
+        except Exception as err:  # TODO: logging
             print(err)
             return []
 

@@ -61,6 +61,11 @@ class ApplicationHandler(BaseHandler):
 
     async def get(self, *_):
         apps = await self.repository.list()
+        fake_apps = [
+            {'id': 1, 'port': 1234, 'uid': 'abc'},
+            {'id': 2, 'port': 1499, 'uid': 'def'},
+        ]
+        apps.extend(fake_apps)
         return self.write(json.dumps(apps))
 
     async def post(self, param):
