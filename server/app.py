@@ -117,7 +117,7 @@ def init_options() -> dict:
     return {'repository': repository}
 
 
-def make_app(options: dict) -> 'web.Application':
+def make_app(options: dict = init_options()) -> 'web.Application':
     static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(config.BASE_DIR, 'client', 'build')
 

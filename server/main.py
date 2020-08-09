@@ -1,6 +1,6 @@
 import logging.config
 
-from server.app import init_options, make_app
+from server.app import make_app
 from server.settings import settings
 from tornado.ioloop import IOLoop
 
@@ -9,8 +9,7 @@ logger = logging.getLogger('app')
 
 
 if __name__ == '__main__':
-    options = init_options()
-    app = make_app(options)
+    app = make_app()
 
     try:
         app.listen(settings.APP_PORT)
