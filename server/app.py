@@ -69,6 +69,7 @@ class ApplicationHandler(BaseHandler):
         if query_data is None:
             raise web.HTTPError(404)
 
+        # Temp
         if param is None:
             fake_apps = [
                 {'id': 1, 'port': 1234, 'uid': 'abc'},
