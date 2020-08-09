@@ -1,13 +1,12 @@
 import json
-import logging.config
+import logging
 from io import BytesIO
 from os import path
+from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
 from more_itertools import one
-from motor.motor_tornado import MotorClient
 from server.domain import Application
-from server.repository import ApplicationRepository
 from server.services import (
     create_application_environment,
     destroy_application_environment,
@@ -19,10 +18,12 @@ from server.settings import Environment, settings as config
 from server.validation import VALIDATION_RULES
 from tornado import web
 from tornado.httputil import HTTPServerRequest
-from tornado.ioloop import IOLoop
 
-logging.config.dictConfig(config.logging_config)
-logger = logging.getLogger('app')
+if TYPE_CHECKING:
+    from server.services import Services
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
@@ -101,10 +102,7 @@ class ApplicationHandler(BaseHandler):
         self.set_status(204)
 
 
-def make_app():
-    db = MotorClient().default
-    settings = {'app_repository': ApplicationRepository(db), 'db': db}
-
+def make_app(services: 'Services') -> 'web.Application':
     static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(config.BASE_DIR, 'client', 'build')
 
@@ -120,16 +118,5 @@ def make_app():
         static_path=static_path,
         template_path=template_path,
         debug=debug,
-        **settings,
+        services=services,
     )
-
-
-if __name__ == '__main__':
-    app = make_app()
-
-    try:
-        app.listen(config.APP_PORT)
-        logger.info('Server started on port %s', config.APP_PORT)
-        IOLoop.current().start()
-    except (KeyboardInterrupt, SystemExit):
-        logger.info('Server graceful shutdown')

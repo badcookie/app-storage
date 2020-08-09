@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     APPS_DIR: str = path.abspath(path.join(BASE_DIR, pardir, 'apps'))
 
     @property
-    def logging_config(self):
+    def logging(self) -> dict:
         return {
             'version': 1,
             'formatters': {

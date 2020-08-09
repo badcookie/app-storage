@@ -9,9 +9,21 @@ from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
+from pydantic import BaseSettings
 from server.exceptions import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
+
+# from motor.motor_tornado import MotorClient
+# from server.repository import ApplicationRepository
+
+
+class Services(BaseSettings):
+    pass
+
+
+# db = MotorClient().default
+# settings = {'app_repository': ApplicationRepository(db), 'db': db}
 
 BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
