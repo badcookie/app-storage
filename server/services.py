@@ -3,27 +3,25 @@ import os
 import shutil
 import subprocess
 import venv
+from dataclasses import dataclass
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
-from typing import List
+from typing import TYPE_CHECKING, List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from pydantic import BaseSettings
 from server.exceptions import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-# from motor.motor_tornado import MotorClient
-# from server.repository import ApplicationRepository
+if TYPE_CHECKING:
+    from server.repository import Repository
 
 
-class Services(BaseSettings):
-    pass
+@dataclass
+class Services:
+    repository: Repository
 
-
-# db = MotorClient().default
-# settings = {'app_repository': ApplicationRepository(db), 'db': db}
 
 BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 

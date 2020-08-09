@@ -58,10 +58,10 @@ class ApplicationHandler(BaseHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.repository = self.application.settings['app_repository']
+        self.services = self.application.settings['services']
 
     async def get(self, *_):
-        apps = await self.repository.list()
+        apps = await self.services.repository.list()
         fake_apps = [
             {'id': 1, 'port': 1234, 'uid': 'abc'},
             {'id': 2, 'port': 1499, 'uid': 'def'},
@@ -80,14 +80,14 @@ class ApplicationHandler(BaseHandler):
         app_port = await register_app(app_uid)
 
         app_instance = Application(uid=app_uid, port=app_port)
-        app_id = await self.repository.add(app_instance)
+        app_id = await self.services.repository.add(app_instance)
 
         app_data = {'uid': app_uid, 'port': app_port, 'id': app_id}
         self.set_status(201)
         self.write(app_data)
 
     async def delete(self, app_id: str):
-        app_to_delete = await self.repository.get(id=app_id)
+        app_to_delete = await self.services.repository.get(id=app_id)
 
         if app_to_delete is None:
             raise web.HTTPError(404)
@@ -97,7 +97,7 @@ class ApplicationHandler(BaseHandler):
 
         await unregister_app(uid, port)
         destroy_application_environment(uid)
-        await self.repository.delete(id=app_id)
+        await self.services.repository.delete(id=app_id)
 
         self.set_status(204)
 

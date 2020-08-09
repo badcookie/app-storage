@@ -1,6 +1,8 @@
 import logging.config
 
+from motor.motor_tornado import MotorClient
 from server.app import make_app
+from server.repository import ApplicationRepository
 from server.services import Services
 from server.settings import settings
 from tornado.ioloop import IOLoop
@@ -10,7 +12,9 @@ logger = logging.getLogger('app')
 
 
 def init_services() -> 'Services':
-    return Services()
+    db = MotorClient().default
+    repository = ApplicationRepository(db)
+    return Services(repository)
 
 
 if __name__ == '__main__':
