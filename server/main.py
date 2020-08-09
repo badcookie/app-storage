@@ -1,9 +1,6 @@
 import logging.config
 
-from motor.motor_tornado import MotorClient
-from server.app import make_app
-from server.repository import ApplicationRepository
-from server.services import Services
+from server.app import init_options, make_app
 from server.settings import settings
 from tornado.ioloop import IOLoop
 
@@ -11,15 +8,9 @@ logging.config.dictConfig(settings.logging)
 logger = logging.getLogger('app')
 
 
-def init_services() -> 'Services':
-    db = MotorClient().default
-    repository = ApplicationRepository(db)
-    return Services(repository)
-
-
 if __name__ == '__main__':
-    services = init_services()
-    app = make_app(services)
+    options = init_options()
+    app = make_app(options)
 
     try:
         app.listen(settings.APP_PORT)

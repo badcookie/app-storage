@@ -3,10 +3,9 @@ import os
 import shutil
 import subprocess
 import venv
-from dataclasses import dataclass
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
-from typing import TYPE_CHECKING, List
+from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -14,18 +13,9 @@ from server.exceptions import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-if TYPE_CHECKING:
-    from server.repository import Repository
+UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
-
-@dataclass
-class Services:
-    repository: Repository
-
-
-BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
-
-client = AsyncHTTPClient()
+http_client = AsyncHTTPClient()
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -140,14 +130,14 @@ async def register_app(app_uid: str) -> int:
         'home': venv_dir,
     }
     request_body = json.dumps(app_data)
-    app_url = f'{BASE_URL}/applications/{app_uid}/'
-    await client.fetch(app_url, body=request_body, method='PUT')
+    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
+    await http_client.fetch(app_url, body=request_body, method='PUT')
 
     app_port = get_unused_port()
-    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
     listener_data = {'pass': f'applications/{app_uid}'}
     request_body = json.dumps(listener_data)
-    await client.fetch(listener_url, body=request_body, method='PUT')
+    await http_client.fetch(listener_url, body=request_body, method='PUT')
 
     return app_port
 
@@ -171,8 +161,8 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     :param app_port: порт, который приложение слушает.
     """
 
-    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
-    await client.fetch(listener_url, method='DELETE')
+    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    await http_client.fetch(listener_url, method='DELETE')
 
-    app_url = f'{BASE_URL}/applications/{app_uid}/'
-    await client.fetch(app_url, method='DELETE')
+    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
+    await http_client.fetch(app_url, method='DELETE')

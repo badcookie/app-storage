@@ -2,11 +2,12 @@ import json
 import logging
 from io import BytesIO
 from os import path
-from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
 from more_itertools import one
+from motor.motor_tornado import MotorClient
 from server.domain import Application
+from server.repository import ApplicationRepository
 from server.services import (
     create_application_environment,
     destroy_application_environment,
@@ -18,10 +19,6 @@ from server.settings import Environment, settings as config
 from server.validation import VALIDATION_RULES
 from tornado import web
 from tornado.httputil import HTTPServerRequest
-
-if TYPE_CHECKING:
-    from server.services import Services
-
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +55,13 @@ class ApplicationHandler(BaseHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.services = self.application.settings['services']
+        self.repository = self.application.settings['repository']
 
     async def get(self, param):
-        repository = self.services.repository
         query_data = (
-            await repository.list() if param is None else await repository.get(id=param)
+            await self.repository.list()
+            if param is None
+            else await self.repository.get(id=param)
         )
 
         if query_data is None:
@@ -91,14 +89,14 @@ class ApplicationHandler(BaseHandler):
         app_port = await register_app(app_uid)
 
         app = Application(uid=app_uid, port=app_port)
-        app_id = await self.services.repository.add(app)
+        app_id = await self.repository.add(app)
 
         app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
         self.set_status(201)
         self.write(app_data)
 
     async def delete(self, app_id: str):
-        app_to_delete = await self.services.repository.get(id=app_id)
+        app_to_delete = await self.repository.get(id=app_id)
 
         if app_to_delete is None:
             raise web.HTTPError(404)
@@ -108,12 +106,18 @@ class ApplicationHandler(BaseHandler):
 
         await unregister_app(uid, port)
         destroy_application_environment(uid)
-        await self.services.repository.delete(id=app_id)
+        await self.repository.delete(id=app_id)
 
         self.set_status(204)
 
 
-def make_app(services: 'Services') -> 'web.Application':
+def init_options() -> dict:
+    db = MotorClient().default
+    repository = ApplicationRepository(db)
+    return {'repository': repository}
+
+
+def make_app(options: dict) -> 'web.Application':
     static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(config.BASE_DIR, 'client', 'build')
 
@@ -129,5 +133,5 @@ def make_app(services: 'Services') -> 'web.Application':
         static_path=static_path,
         template_path=template_path,
         debug=debug,
-        services=services,
+        **options,
     )
