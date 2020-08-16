@@ -172,15 +172,15 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     await client.fetch(app_url, method='DELETE')
 
 
-def handle_internal_error(handler) -> Callable:
-    @wraps(handler)
+def handle_internal_error(func) -> Callable:
+    @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            await handler(*args, **kwargs)
+            await func(*args, **kwargs)
         except Exception as error:
             message = str(error)
             error_logger.error(message)
-            request = args[0]
-            request.handle_error(message)
+            handler = args[0]
+            handler.handle_error(message)
 
     return wrapper
