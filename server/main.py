@@ -1,6 +1,8 @@
 import logging.config
 
+from motor.motor_tornado import MotorClient
 from server.app import make_app
+from server.repository import ApplicationRepository
 from server.settings import settings
 from tornado.ioloop import IOLoop
 
@@ -8,8 +10,22 @@ logging.config.dictConfig(settings.logging)
 logger = logging.getLogger('app')
 
 
+def init_app_options() -> dict:
+    dsn = ''.join(
+        [
+            'mongodb://',
+            f'{settings.DB.DB_USER}:{settings.DB.DB_PASSWORD}',
+            f'@{settings.DB.DB_HOST}:{settings.DB.DB_PORT}',
+        ]
+    )
+    db = MotorClient(dsn).default
+
+    return {'repository': ApplicationRepository(db)}
+
+
 if __name__ == '__main__':
-    app = make_app()
+    options = init_app_options()
+    app = make_app(options)
 
     try:
         app.listen(settings.APP_PORT)

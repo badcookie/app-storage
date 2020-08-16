@@ -5,12 +5,11 @@ from os import path
 from zipfile import ZipFile
 
 from more_itertools import one
-from motor.motor_tornado import MotorClient
 from server.domain import Application
-from server.repository import ApplicationRepository
 from server.services import (
     create_application_environment,
     destroy_application_environment,
+    handle_internal_error,
     register_app,
     unregister_app,
     validate_package,
@@ -41,12 +40,17 @@ class BaseHandler(web.RequestHandler):
         self.finish()
 
 
+def handle_error(self, error):
+    self.set_status(500)
+    self.finish(error)
+
+
 class IndexHandler(BaseHandler):
     async def get(self):
         return self.render('index.html')
 
 
-class ApplicationHandler(BaseHandler):
+class ApplicationsHandler(BaseHandler):
     """
     Принимает zip архив приложения, создаёт для него
     окружение, обновляет конфигурацию веб-сервера
@@ -58,14 +62,11 @@ class ApplicationHandler(BaseHandler):
         self.repository = self.application.settings['repository']
 
     async def get(self, param):
-        try:
-            query_data = (
-                await self.repository.list()
-                if param is None
-                else await self.repository.get(id=param)
-            )
-        except Exception as error:
-            self.write_error(500, reason=error)
+        query_data = (
+            await self.repository.list()
+            if param is None
+            else await self.repository.get(id=param)
+        )
 
         if query_data is None:
             raise web.HTTPError(404)
@@ -81,6 +82,7 @@ class ApplicationHandler(BaseHandler):
         result = json.dumps(query_data)
         return self.write(result)
 
+    @handle_internal_error
     async def post(self, param):
         if param is not None:
             raise web.HTTPError(400)
@@ -98,6 +100,7 @@ class ApplicationHandler(BaseHandler):
         self.set_status(201)
         self.write(app_data)
 
+    @handle_internal_error
     async def delete(self, app_id: str):
         app_to_delete = await self.repository.get(id=app_id)
 
@@ -114,13 +117,7 @@ class ApplicationHandler(BaseHandler):
         self.set_status(204)
 
 
-def init_options() -> dict:
-    db = MotorClient().default
-    repository = ApplicationRepository(db)
-    return {'repository': repository}
-
-
-def make_app(options: dict = init_options()) -> 'web.Application':
+def make_app(options) -> 'web.Application':
     static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(config.BASE_DIR, 'client', 'build')
 
@@ -128,7 +125,7 @@ def make_app(options: dict = init_options()) -> 'web.Application':
 
     routes = [
         (r'/', IndexHandler),
-        (r'/applications/([^/]+)?', ApplicationHandler),
+        (r'/applications/([^/]+)?', ApplicationsHandler),
     ]
 
     return web.Application(
