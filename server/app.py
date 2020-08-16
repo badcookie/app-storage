@@ -58,22 +58,25 @@ class ApplicationHandler(BaseHandler):
         self.repository = self.application.settings['repository']
 
     async def get(self, param):
-        query_data = (
-            await self.repository.list()
-            if param is None
-            else await self.repository.get(id=param)
-        )
+        try:
+            query_data = (
+                await self.repository.list()
+                if param is None
+                else await self.repository.get(id=param)
+            )
+        except Exception as error:
+            self.write_error(500, reason=error)
 
         if query_data is None:
             raise web.HTTPError(404)
 
         # Temp
-        if param is None:
-            fake_apps = [
-                {'id': 1, 'port': 1234, 'uid': 'abc'},
-                {'id': 2, 'port': 1499, 'uid': 'def'},
-            ]
-            query_data.extend(fake_apps)
+        # if param is None:
+        #     fake_apps = [
+        #         {'id': 1, 'port': 1234, 'uid': 'abc'},
+        #         {'id': 2, 'port': 1499, 'uid': 'def'},
+        #     ]
+        #     query_data.extend(fake_apps)
 
         result = json.dumps(query_data)
         return self.write(result)

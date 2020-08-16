@@ -5,7 +5,7 @@ F=tests/
 install:
 	@poetry install
 	@cd client
-	@npm install
+	@yarn install
 
 setup:
 	@python setup.py
@@ -16,7 +16,7 @@ test:
 
 server:
 	@export PYTHONPATH="${PYTHONPATH}:."
-	@python server/app.py
+	@python server/main.py
 
 client:
 	@cd client

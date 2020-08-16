@@ -14,11 +14,14 @@ const Applications = () => {
 
   useEffect(() => {
     const url = `http://${document.location.hostname}:8000/applications/`;
+    console.log('wtf')
     axios.get(url)
       .then((response) => {
+        console.log(response);
         const apps = response.data;
+        console.log(apps);
         addApps(apps);
-    });
+    }).catch(console.log);
   }, []);
 
   return <ul>{apps.map((app) => <li key={app.id}>{app.uid} {app.port}</li>)}</ul>;
