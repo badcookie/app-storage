@@ -28,7 +28,7 @@ services:
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${{UNIT_PORT:-{unit_port}}}"]
     volumes:
-      - apps_data:"${{APPS_DIR}}"
+      - apps_data:${{APPS_DIR}}
 
   server:
     container_name: "${{PROJECT_NAME}}_server"
@@ -39,7 +39,7 @@ services:
     ports:
       - "${{APP_PORT:-{app_port}}}:${{APP_PORT:-{app_port}}}"
     volumes:
-      - apps_data:"${{APPS_DIR}}"
+      - apps_data:${{APPS_DIR}}
 
   db:
     image: mongo
