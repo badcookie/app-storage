@@ -14,8 +14,8 @@ def init_app_options() -> dict:
     dsn = ''.join(
         [
             'mongodb://',
-            f'{settings.DB.DB_USER}:{settings.DB.DB_PASSWORD}',
-            f'@{settings.DB.DB_HOST}:{settings.DB.DB_PORT}',
+            f'{settings.DB.USER}:{settings.DB.PASSWORD}',
+            f'@{settings.DB.HOST}:{settings.DB.PORT}',
         ]
     )
     db = MotorClient(dsn).default

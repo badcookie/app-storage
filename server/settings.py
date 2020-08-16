@@ -2,7 +2,7 @@ import logging
 from os import pardir, path
 
 from dotenv import find_dotenv
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Field
 
 env_path = find_dotenv()
 
@@ -14,10 +14,10 @@ class Environment(str):
 
 
 class DBSettings(BaseSettings):
-    HOST: str
-    PORT: int = 27017
-    USER_: str
-    PASSWORD: str
+    HOST: str = Field(env='DB_HOST')
+    PORT: int = Field(env='DB_PORT', default=27017)
+    USER: str = Field(env='DB_USER')
+    PASSWORD: str = Field(env='DB_PASSWORD')
 
 
 class Settings(BaseSettings):
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APP_PORT: int = 8000
     UNIT_PORT: int = 9000
     UNIT_HOST: str = '127.0.0.1'
-    DB: 'DBSettings'
+    DB: 'DBSettings' = DBSettings(_env_file=env_path)
     APP_ID_LENGTH: int = 8
     MAX_PACKAGE_SIZE_MB: int = 5
     APP_ID_CREATION_TRIES_COUNT: int = 5

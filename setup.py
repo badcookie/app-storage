@@ -12,7 +12,10 @@ PROJECT_NAME={project_name}
 APP_PORT={app_port}
 APPS_DIR={apps_dir}
 UNIT_PORT={unit_port}
-DB={{"HOST": "{db_host}", "PORT": "{db_port}", "USER_": "{db_user}", "PASSWORD": "{db_password}"}}
+DB_HOST={db_host}
+DB_PORT={db_port}
+DB_USER={db_user}
+DB_PASSWORD={db_password}
 '''
 
 COMPOSE_TEMPLATE = '''version: "3.5"
