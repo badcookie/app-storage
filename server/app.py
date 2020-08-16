@@ -9,6 +9,7 @@ from server.repository import ApplicationRepository
 from server.services import (
     create_application_environment,
     destroy_application_environment,
+    handle_internal_error,
     register_app,
     unregister_app,
     validate_package,
@@ -29,7 +30,13 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
     return ZipFile(BytesIO(file_body), 'r')
 
 
-class ApplicationsHandler(web.RequestHandler):
+class BaseHandler(web.RequestHandler):
+    def handle_error(self, error):
+        self.set_status(500)
+        self.finish(error)
+
+
+class ApplicationsHandler(BaseHandler):
     """
     Принимает zip архив приложения, создаёт для него
     окружение, обновляет конфигурацию веб-сервера
@@ -38,8 +45,9 @@ class ApplicationsHandler(web.RequestHandler):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.repository = self.application.settings['app_repository']
+        self.repository = self.application.settings['repository']
 
+    @handle_internal_error
     async def post(self, param):
         if param is not None:
             raise web.HTTPError(400)
@@ -57,6 +65,7 @@ class ApplicationsHandler(web.RequestHandler):
         self.set_status(201)
         self.write(app_data)
 
+    @handle_internal_error
     async def delete(self, app_id: str):
         app_to_delete = await self.repository.get(id=app_id)
 
@@ -74,8 +83,17 @@ class ApplicationsHandler(web.RequestHandler):
 
 
 def make_app():
-    db = MotorClient().default
-    settings = {'app_repository': ApplicationRepository(db), 'db': db}
+    dsn = ''.join(
+        [
+            'mongodb://',
+            f'{config.DB.DB_USER}:{config.DB.DB_PASSWORD}',
+            f'@{config.DB.DB_HOST}:{config.DB.DB_PORT}',
+        ]
+    )
+
+    db = MotorClient(dsn).default
+
+    settings = {'repository': ApplicationRepository(db)}
     return web.Application(
         [(r'/application/([^/]+)?', ApplicationsHandler)], **settings
     )

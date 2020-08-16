@@ -23,10 +23,11 @@ services:
 
   db:
     image: mongo
+    container_name: "${PROJECT_NAME:-app_storage}_db"
     volumes:
       - db_data:/data/db
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
     ports:
       - "${DB_PORT:-27017}:27017"

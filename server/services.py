@@ -1,11 +1,13 @@
 import json
+import logging
 import os
 import shutil
 import subprocess
 import venv
+from functools import wraps
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
-from typing import List
+from typing import Callable, List
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -16,6 +18,8 @@ from tornado.httpclient import AsyncHTTPClient
 BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
 client = AsyncHTTPClient()
+
+error_logger = logging.getLogger('internal-error')
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -166,3 +170,17 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
 
     app_url = f'{BASE_URL}/applications/{app_uid}/'
     await client.fetch(app_url, method='DELETE')
+
+
+def handle_internal_error(handler) -> Callable:
+    @wraps(handler)
+    async def wrapper(*args, **kwargs):
+        try:
+            await handler(*args, **kwargs)
+        except Exception as error:
+            message = str(error)
+            error_logger.error(message)
+            request = args[0]
+            request.handle_error(message)
+
+    return wrapper

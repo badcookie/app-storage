@@ -9,7 +9,7 @@ env_path = find_dotenv()
 class DBSettings(BaseSettings):
     DB_HOST: str
     DB_PORT: int = 27017
-    DB_USERNAME: str
+    DB_USER: str
     DB_PASSWORD: str
 
 
