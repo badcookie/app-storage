@@ -6,7 +6,14 @@ const appSlice = createSlice({
   initialState: [],
   reducers: {
     addApps: (state, action) => {
-        state.push(...action.payload);
+      state.push(...action.payload);
+    },
+    addApp: (state, action) => {
+      state.push(action.payload);
+    },
+    removeApp: (state, action) => {
+      const appIdToRemove = action.payload;
+      return state.filter((app) => app.id !== appIdToRemove);
     },
   },
 });

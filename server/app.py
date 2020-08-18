@@ -33,7 +33,7 @@ class BaseHandler(web.RequestHandler):
     def set_default_headers(self) -> None:
         super().set_default_headers()
         self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.set_header('Access-Control-Allow-Methods', 'GET,POST,DELETE,PUT')
 
     def options(self):
         self.set_status(204)
@@ -71,6 +71,7 @@ class ApplicationsHandler(BaseHandler):
         if query_data is None:
             raise web.HTTPError(404)
 
+        # Temp
         if param is None:
             fake_apps = [
                 {'id': 1, 'port': 1234, 'uid': 'abc'},
