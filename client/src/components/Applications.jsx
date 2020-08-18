@@ -45,14 +45,18 @@ const Applications = () => {
     return <p>No apps</p>;
   }
 
-  return <ul>
-    {apps.map((app) => (
-      <li key={app.id}>{app.uid} {app.port}
-        <button onClick={handleAppRemove(app.id, removeApp)}>remove</button>
-        <button onClick={handleAppUpdate(app.id)}>update</button>
-      </li>
-    ))}
-  </ul>;
+  const appsList = (
+    <ul>
+      {apps.map((app) => (
+        <li key={app.id}>{app.uid} {app.port}
+          <button onClick={handleAppRemove(app.id, removeApp)}>remove</button>
+          <button onClick={handleAppUpdate(app.id)}>update</button>
+        </li>
+      ))}
+    </ul>
+  );
+
+  return <div>{appsList}</div>;
 };
 
 export default Applications;

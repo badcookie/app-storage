@@ -1,30 +1,30 @@
 import React from 'react';
-import { Formik } from 'formik';
 
 
-// const Form = () => {
-//   const handleFileSubmit = (values) => {
-//       console.log(values);
-//   };
-//
-//   return (
-//     <Formik onSubmit={handleFileSubmit()} initialValues={{}}>
-//       {({ errors }) => {
-//           console.log('errors:', errors);
-//         return (
-//           <Form>
-//             <input type="file" required name="file" />
-//             <input type="submit" value="submit" />
-//           </Form>
-//         );
-//       }}
-//     </Formik>
-//   );
-// };
-//
-// export default Form;
+class Form extends React.Component {
+  constructor(props) {
+    super(props);
+    this.fileInput = React.createRef();
+  }
 
-    // {/*<form onSubmit={handleFileSubmit}>*/}
-    // {/*    <input type="file" onChange={handleFileChange} />*/}
-    // {/*    <input type="submit" value="Add app" />*/}
-    // {/*</form>*/}
+  handleSubmit = (fileRef) => (event) => {
+    event.preventDefault();
+    const file = fileRef.current.files[0];
+    console.log(file);
+  }
+
+  render() {
+    return (
+      <form onSubmit={this.handleSubmit(this.fileInput)}>
+        <label>
+          Upload file:
+          <input type="file" ref={this.fileInput} />
+        </label>
+        <br />
+        <button type="submit">Submit</button>
+      </form>
+    );
+  }
+}
+
+export default Form;
