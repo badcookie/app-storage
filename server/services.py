@@ -1,5 +1,5 @@
 import json
-import logging
+import logging.config
 import os
 import shutil
 import subprocess
@@ -19,7 +19,7 @@ UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
 http_client = AsyncHTTPClient()
 
-error_logger = logging.getLogger('internal-error')
+error_logger = logging.getLogger()
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -36,7 +36,8 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
     for rule in rules:
         constraint_is_fulfilled = rule['constraint']
         if not constraint_is_fulfilled(package):
-            raise rule['exception']
+            exception = rule['exception']
+            raise exception()
 
 
 def load_app_requirements(app_dir: str) -> None:
