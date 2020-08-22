@@ -1,12 +1,19 @@
 import os
 import shutil
+from typing import TYPE_CHECKING, List, Optional, Union
+from uuid import uuid4
 from zipfile import ZipFile
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 from server.app import make_app
+from server.domain import ApplicationReadOnly
+from server.repository import Repository
 from server.settings import settings
 from server.validation import VALIDATION_RULES
+
+if TYPE_CHECKING:
+    from server.domain import Entity
 
 
 @pytest.fixture
@@ -16,7 +23,14 @@ def validation_rules():
 
 @pytest.fixture
 async def db_connection():
-    client = AsyncIOMotorClient(host=settings.DB.HOST, port=settings.DB.PORT)
+    dsn = ''.join(
+        [
+            'mongodb://',
+            f'{settings.DB.USER}:{settings.DB.PASSWORD}',
+            f'@{settings.DB.HOST}:{settings.DB.PORT}',
+        ]
+    )
+    client = AsyncIOMotorClient(dsn)
     db = client.test
     yield db
     await client.drop_database(db)
@@ -55,6 +69,38 @@ def get_items_generator():
     return getter
 
 
+class TestRepository(Repository):
+    model = ApplicationReadOnly
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def add(self, entity: 'Entity') -> Optional[Union[int, str]]:
+        serialized_entity = entity.dict()
+        entity_id = uuid4().hex
+
+        entity_to_save = {**serialized_entity, 'id': entity_id}
+        self._db.append(entity_to_save)
+
+        return entity_id
+
+    async def list(self) -> List['Entity']:
+        return [self.model(**entity) for entity in self._db]
+
+    async def get(self, **params) -> 'Entity':
+        entity = [item for item in self._db if params.items() <= item.items()]
+        return self.model(**entity[0]) if entity else None
+
+    async def delete(self, **params) -> None:
+        self._db = [item for item in self._db if not params.items() <= item.items()]
+
+
+def init_app_options():
+    db = []
+    return {'repository': TestRepository(db)}
+
+
 @pytest.fixture
 def app():
-    return make_app({})
+    options = init_app_options()
+    return make_app(options)

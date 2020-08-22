@@ -75,7 +75,7 @@ async def test_successful_app_lifecycle(
 
     app_path = path.join(settings.APPS_DIR, app_uid)
 
-    repo = app.settings['app_repository']
+    repo = app.settings['repository']
     saved_app = await repo.get(id=app_id)
     assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
 
