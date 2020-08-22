@@ -14,7 +14,7 @@ from server.services import (
     unregister_app,
     validate_package,
 )
-from server.settings import Environment, settings as config
+from server.settings import settings
 from server.validation import VALIDATION_RULES
 from tornado import web
 from tornado.httputil import HTTPServerRequest
@@ -39,10 +39,9 @@ class BaseHandler(web.RequestHandler):
         self.set_status(204)
         self.finish()
 
-
-def handle_error(self, error):
-    self.set_status(500)
-    self.finish(error)
+    def handle_error(self, error):
+        self.set_status(500)
+        self.finish(error)
 
 
 class IndexHandler(BaseHandler):
@@ -118,10 +117,8 @@ class ApplicationsHandler(BaseHandler):
 
 
 def make_app(options) -> 'web.Application':
-    static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
-    template_path = path.join(config.BASE_DIR, 'client', 'build')
-
-    debug = config.ENVIRONMENT == Environment.DEVELOPMENT
+    static_path = path.join(settings.BASE_DIR, 'client', 'build', 'static')
+    template_path = path.join(settings.BASE_DIR, 'client', 'build')
 
     routes = [
         (r'/', IndexHandler),
@@ -129,9 +126,5 @@ def make_app(options) -> 'web.Application':
     ]
 
     return web.Application(
-        routes,
-        static_path=static_path,
-        template_path=template_path,
-        debug=debug,
-        **options,
+        routes, static_path=static_path, template_path=template_path, **options,
     )

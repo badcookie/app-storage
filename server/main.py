@@ -3,7 +3,7 @@ import logging.config
 from motor.motor_tornado import MotorClient
 from server.app import make_app
 from server.repository import ApplicationRepository
-from server.settings import settings
+from server.settings import Environment, settings
 from tornado.ioloop import IOLoop
 
 logging.config.dictConfig(settings.logging)
@@ -19,8 +19,9 @@ def init_app_options() -> dict:
         ]
     )
     db = MotorClient(dsn).default
+    debug = settings.ENVIRONMENT == Environment.DEVELOPMENT
 
-    return {'repository': ApplicationRepository(db)}
+    return {'repository': ApplicationRepository(db), 'debug': debug}
 
 
 if __name__ == '__main__':
