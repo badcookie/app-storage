@@ -1,15 +1,19 @@
 import json
-import logging
+import logging.config
 from io import BytesIO
 from os import path
 from zipfile import ZipFile
 
 from more_itertools import one
 from server.domain import Application
+from server.errors import (
+    APP_NOT_FOUND_MESSAGE,
+    UNEXPECTED_PARAM_MESSAGE,
+    handle_internal_error,
+)
 from server.services import (
     create_application_environment,
     destroy_application_environment,
-    handle_internal_error,
     register_app,
     unregister_app,
     validate_package,
@@ -39,7 +43,11 @@ class BaseHandler(web.RequestHandler):
         self.set_status(204)
         self.finish()
 
-    def handle_internal_error(self, error):
+    def handle_client_error(self, status: int, error: str) -> None:
+        self.set_status(status)
+        self.finish(error)
+
+    def handle_internal_error(self, error: str) -> None:
         self.set_status(500)
         self.finish(error)
 
@@ -68,7 +76,7 @@ class ApplicationsHandler(BaseHandler):
         )
 
         if query_data is None:
-            raise web.HTTPError(404)
+            raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
         result = json.dumps(query_data)
         return self.write(result)
@@ -76,7 +84,7 @@ class ApplicationsHandler(BaseHandler):
     @handle_internal_error
     async def post(self, param):
         if param is not None:
-            raise web.HTTPError(400)
+            raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
         file = get_request_file(self.request)
         validate_package(file, VALIDATION_RULES)
@@ -96,7 +104,7 @@ class ApplicationsHandler(BaseHandler):
         app_to_delete = await self.repository.get(id=app_id)
 
         if app_to_delete is None:
-            raise web.HTTPError(404)
+            raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
         uid = app_to_delete.uid
         port = app_to_delete.port
@@ -111,6 +119,8 @@ class ApplicationsHandler(BaseHandler):
 def make_app(options) -> 'web.Application':
     static_path = path.join(settings.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(settings.BASE_DIR, 'client', 'build')
+
+    logging.config.dictConfig(settings.logging)
 
     routes = [
         (r'/', IndexHandler),
