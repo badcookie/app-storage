@@ -55,9 +55,12 @@ def get_package():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def create_apps_directory():
-    yield os.mkdir(settings.APPS_DIR)
-    shutil.rmtree(settings.APPS_DIR)
+def teardown_apps():
+    yield
+    for root, dirs, files in os.walk(settings.apps_path):
+        for directory in dirs:
+            app_path = os.path.join(root, directory)
+            shutil.rmtree(app_path)
 
 
 @pytest.fixture
