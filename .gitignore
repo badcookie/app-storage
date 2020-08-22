@@ -1,5 +1,11 @@
-venv
 .idea
-temp
 __pycache__
+*.retry
+
+apps
+temp
+Dockerfile.server
+docker-compose.yml
+
+venv
 .env

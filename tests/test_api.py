@@ -12,8 +12,9 @@ FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 @pytest.fixture
 def routes(base_url):
     return {
-        'app_create': lambda: f'{base_url}/application/',
-        'app_delete': lambda app_id: f'{base_url}/application/{app_id}',
+        'index': lambda: f'{base_url}',
+        'app_list': lambda: f'{base_url}/applications/',
+        'app_detail': lambda app_id: f'{base_url}/applications/{app_id}',
     }
 
 
@@ -29,7 +30,7 @@ def prepare_send_file_request(get_package, routes):
         zipfile = open(absolute_filepath, 'rb')
         files = {'zipfile': zipfile}
 
-        url = routes['app_create']()
+        url = routes['app_list']()
         request = Request(url=url, files=files)
         prepared_request = request.prepare()
         content_type = prepared_request.headers.get('Content-Type')
@@ -43,7 +44,6 @@ def prepare_send_file_request(get_package, routes):
     return _
 
 
-@pytest.mark.usefixtures('unit_service', 'db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_successful_app_lifecycle(
     prepare_send_file_request, http_client, routes, app,
@@ -51,7 +51,7 @@ async def test_successful_app_lifecycle(
     request_data = prepare_send_file_request('valid_app')
     assert request_data
 
-    create_url = routes['app_create']()
+    create_url = routes['app_list']()
     response = await http_client.fetch(
         create_url,
         method='POST',
@@ -81,7 +81,7 @@ async def test_successful_app_lifecycle(
 
     assert path.exists(app_path)
 
-    delete_url = routes['app_delete'](app_id)
+    delete_url = routes['app_detail'](app_id)
     response = await http_client.fetch(delete_url, method='DELETE', raise_error=False)
     assert response.code == 204
 
@@ -94,10 +94,9 @@ async def test_successful_app_lifecycle(
         await http_client.fetch(app_url, method='GET', raise_error=False)
 
 
-@pytest.mark.usefixtures('db_service')
 @pytest.mark.gen_test(timeout=90)
 async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
-    url = routes['app_create']()
+    url = routes['app_list']()
     request_data = prepare_send_file_request('app_with_empty_file')
     response = await http_client.fetch(
         url, method='POST', raise_error=False, **request_data,
@@ -111,7 +110,7 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     )
     assert response.code == 400
 
-    invalid_delete_url = routes['app_delete'](some_uid)
+    invalid_delete_url = routes['app_detail'](some_uid)
     response = await http_client.fetch(
         invalid_delete_url, method='DELETE', raise_error=False, request_timeout=90
     )

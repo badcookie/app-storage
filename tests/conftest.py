@@ -2,7 +2,6 @@ import os
 import shutil
 from zipfile import ZipFile
 
-import docker
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 from server.app import make_app
@@ -15,45 +14,10 @@ def validation_rules():
     return VALIDATION_RULES
 
 
-@pytest.fixture(scope='session')
-def docker_client():
-    return docker.from_env()
-
-
-@pytest.fixture()
-def unit_service(docker_client):
-    image = docker_client.images.pull(settings.UNIT_IMAGE)
-    volume = {settings.APPS_DIR: {'bind': '/apps/', 'mode': 'rw'}}
-    command = f'unitd --no-daemon --control 127.0.0.1:{settings.UNIT_PORT}'
-
-    container = docker_client.containers.create(
-        image=image,
-        network='host',
-        command=command,
-        volumes=volume,
-        name='test_unit_service',
-        auto_remove=True,
-    )
-    container.start()
-    yield container
-    container.stop()
-
-
-@pytest.fixture()
-def db_service(docker_client):
-    image = docker_client.images.pull(settings.DB_IMAGE)
-    container = docker_client.containers.create(
-        image=image, network='host', name='test_db_service', auto_remove=True,
-    )
-    container.start()
-    yield container
-    container.stop()
-
-
 @pytest.fixture
-async def db_connection(db_service):
-    client = AsyncIOMotorClient(settings.DB.DB_HOST, settings.DB.DB_PORT)
-    db = client.test_database
+async def db_connection():
+    client = AsyncIOMotorClient(host=settings.DB.HOST, port=settings.DB.PORT)
+    db = client.test
     yield db
     await client.drop_database(db)
 
@@ -93,4 +57,4 @@ def get_items_generator():
 
 @pytest.fixture
 def app():
-    return make_app()
+    return make_app({})

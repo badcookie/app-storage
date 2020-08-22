@@ -1,0 +1,34 @@
+- hosts: all
+  gather_facts: false
+
+  vars:
+    templates_path: "./templates"
+    services_to_run: "{{ 'unit db' if ansible_host is 'localhost' else 'unit db server' }}"
+
+  tasks:
+    - name: setup env files
+      template:
+        src: "{{ templates_path }}/{{ item }}.j2"
+        dest: "{{ project_path }}/{{ item }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      with_items:
+        - ".env"
+        - "Dockerfile.server"
+        - "docker-compose.yml"
+
+    - name: ensure apps path exists
+      file:
+        path: "{{ apps_path }}"
+        state: directory
+
+    - name: run base services
+      shell: docker-compose up -d db unit
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: run server
+      shell: docker-compose up -d server
+      args:
+        chdir: "{{ project_path }}"
+      when: ansible_host != 'localhost'

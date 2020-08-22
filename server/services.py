@@ -1,5 +1,5 @@
 import json
-import logging
+import logging.config
 import os
 import shutil
 import subprocess
@@ -15,11 +15,11 @@ from server.exceptions import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
 
-BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
+UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
-client = AsyncHTTPClient()
+http_client = AsyncHTTPClient()
 
-error_logger = logging.getLogger('internal-error')
+error_logger = logging.getLogger()
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -36,7 +36,8 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
     for rule in rules:
         constraint_is_fulfilled = rule['constraint']
         if not constraint_is_fulfilled(package):
-            raise rule['exception']
+            exception = rule['exception']
+            raise exception()
 
 
 def load_app_requirements(app_dir: str) -> None:
@@ -134,14 +135,14 @@ async def register_app(app_uid: str) -> int:
         'home': venv_dir,
     }
     request_body = json.dumps(app_data)
-    app_url = f'{BASE_URL}/applications/{app_uid}/'
-    await client.fetch(app_url, body=request_body, method='PUT')
+    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
+    await http_client.fetch(app_url, body=request_body, method='PUT')
 
     app_port = get_unused_port()
-    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
     listener_data = {'pass': f'applications/{app_uid}'}
     request_body = json.dumps(listener_data)
-    await client.fetch(listener_url, body=request_body, method='PUT')
+    await http_client.fetch(listener_url, body=request_body, method='PUT')
 
     return app_port
 
@@ -165,11 +166,11 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     :param app_port: порт, который приложение слушает.
     """
 
-    listener_url = f'{BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
-    await client.fetch(listener_url, method='DELETE')
+    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    await http_client.fetch(listener_url, method='DELETE')
 
-    app_url = f'{BASE_URL}/applications/{app_uid}/'
-    await client.fetch(app_url, method='DELETE')
+    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
+    await http_client.fetch(app_url, method='DELETE')
 
 
 def handle_internal_error(func) -> Callable:

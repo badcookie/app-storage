@@ -1,13 +1,20 @@
 .ONESHELL: all
 
+test_file = ''
 
 test:
-	@export PYTHONPATH=.
-	@pytest -s
+	@export PYTHONPATH="${PYTHONPATH}:."
+	@pytest -s tests/$(test_file)
 
 install:
 	@poetry install
 
 setup:
 	@cd deploy
-	@ansible-playbook -i hosts local_setup.yml
+	@ansible-playbook -i hosts --limit local setup.yml
+
+server:
+	@export PYTHONPATH="${PYTHONPATH}:."
+	@python server/main.py
+
+.PHONY: server

@@ -1,11 +1,11 @@
+import json
 import logging
 from io import BytesIO
+from os import path
 from zipfile import ZipFile
 
 from more_itertools import one
-from motor.motor_tornado import MotorClient
 from server.domain import Application
-from server.repository import ApplicationRepository
 from server.services import (
     create_application_environment,
     destroy_application_environment,
@@ -14,13 +14,12 @@ from server.services import (
     unregister_app,
     validate_package,
 )
-from server.settings import settings as config
+from server.settings import Environment, settings as config
 from server.validation import VALIDATION_RULES
 from tornado import web
 from tornado.httputil import HTTPServerRequest
-from tornado.ioloop import IOLoop
 
-logger = logging.getLogger('app')
+logger = logging.getLogger(__name__)
 
 
 def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
@@ -31,9 +30,24 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
 
 
 class BaseHandler(web.RequestHandler):
-    def handle_error(self, error):
-        self.set_status(500)
-        self.finish(error)
+    def set_default_headers(self) -> None:
+        super().set_default_headers()
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Access-Control-Allow-Methods', 'GET,POST,DELETE,PUT')
+
+    def options(self):
+        self.set_status(204)
+        self.finish()
+
+
+def handle_error(self, error):
+    self.set_status(500)
+    self.finish(error)
+
+
+class IndexHandler(BaseHandler):
+    async def get(self):
+        return self.render('index.html')
 
 
 class ApplicationsHandler(BaseHandler):
@@ -47,6 +61,27 @@ class ApplicationsHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['repository']
 
+    async def get(self, param):
+        query_data = (
+            await self.repository.list()
+            if param is None
+            else await self.repository.get(id=param)
+        )
+
+        if query_data is None:
+            raise web.HTTPError(404)
+
+        # Temp
+        if param is None:
+            fake_apps = [
+                {'id': 1, 'port': 1234, 'uid': 'abc'},
+                {'id': 2, 'port': 1499, 'uid': 'def'},
+            ]
+            query_data.extend(fake_apps)
+
+        result = json.dumps(query_data)
+        return self.write(result)
+
     @handle_internal_error
     async def post(self, param):
         if param is not None:
@@ -58,10 +93,10 @@ class ApplicationsHandler(BaseHandler):
         app_uid = create_application_environment(file)
         app_port = await register_app(app_uid)
 
-        app_instance = Application(uid=app_uid, port=app_port)
-        app_id = await self.repository.add(app_instance)
+        app = Application(uid=app_uid, port=app_port)
+        app_id = await self.repository.add(app)
 
-        app_data = {'uid': app_uid, 'port': app_port, 'id': app_id}
+        app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
         self.set_status(201)
         self.write(app_data)
 
@@ -82,29 +117,21 @@ class ApplicationsHandler(BaseHandler):
         self.set_status(204)
 
 
-def make_app():
-    dsn = ''.join(
-        [
-            'mongodb://',
-            f'{config.DB.DB_USER}:{config.DB.DB_PASSWORD}',
-            f'@{config.DB.DB_HOST}:{config.DB.DB_PORT}',
-        ]
-    )
+def make_app(options) -> 'web.Application':
+    static_path = path.join(config.BASE_DIR, 'client', 'build', 'static')
+    template_path = path.join(config.BASE_DIR, 'client', 'build')
 
-    db = MotorClient(dsn).default
+    debug = config.ENVIRONMENT == Environment.DEVELOPMENT
 
-    settings = {'repository': ApplicationRepository(db)}
+    routes = [
+        (r'/', IndexHandler),
+        (r'/applications/([^/]+)?', ApplicationsHandler),
+    ]
+
     return web.Application(
-        [(r'/application/([^/]+)?', ApplicationsHandler)], **settings
+        routes,
+        static_path=static_path,
+        template_path=template_path,
+        debug=debug,
+        **options,
     )
-
-
-if __name__ == '__main__':
-    app = make_app()
-
-    try:
-        app.listen(config.APP_PORT)
-        logging.info(f'Server started on port: {config.APP_PORT}')
-        IOLoop.current().start()
-    except (KeyboardInterrupt, SystemExit):
-        logging.info('Server graceful shutdown')
