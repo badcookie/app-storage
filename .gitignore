@@ -10,6 +10,3 @@ docker-compose.yml
 venv
 .env
 node_modules
-docker-compose.yml
-Dockerfile
-.settings.json
