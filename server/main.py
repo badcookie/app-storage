@@ -8,7 +8,7 @@ from tornado.ioloop import IOLoop
 
 
 def init_app_options() -> dict:
-    db = MotorClient(settings.db_dsn).default
+    db = MotorClient(settings.DB.dsn).default
     debug = settings.ENVIRONMENT == Environment.DEVELOPMENT
 
     return {'repository': ApplicationRepository(db), 'debug': debug}
