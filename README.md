@@ -10,4 +10,6 @@
 
 ### Setup
 
-`make setup`
+1. init venv (python 3.7)
+2. `make install`
+3. `make setup`

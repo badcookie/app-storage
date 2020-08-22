@@ -3,16 +3,30 @@ from os import path
 
 import pytest
 from requests import Request
+from server.services import UNIT_BASE_URL
 from server.settings import settings
+from tornado.httpclient import AsyncHTTPClient
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
+
+async_http_client = AsyncHTTPClient()
+
+
+@pytest.fixture(autouse=True)
+async def teardown_unit():
+    yield
+    config = {'applications': {}, 'listeners': {}}
+    request_data = json.dumps(config)
+    response = await async_http_client.fetch(
+        UNIT_BASE_URL, body=request_data, method='PUT'
+    )
+    assert response.code == 200
 
 
 @pytest.fixture
 def routes(base_url):
     return {
-        'index': lambda: f'{base_url}',
         'app_list': lambda: f'{base_url}/applications/',
         'app_detail': lambda app_id: f'{base_url}/applications/{app_id}',
     }
@@ -73,9 +87,9 @@ async def test_successful_app_lifecycle(
     app_id = app_data['id']
     app_uid = app_data['uid']
 
-    app_path = path.join(settings.APPS_DIR, app_uid)
+    app_path = path.join(settings.apps_path, app_uid)
 
-    repo = app.settings['app_repository']
+    repo = app.settings['repository']
     saved_app = await repo.get(id=app_id)
     assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
 
@@ -101,7 +115,7 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     response = await http_client.fetch(
         url, method='POST', raise_error=False, **request_data,
     )
-    assert response.code == 500
+    assert response.code == 400
 
     some_uid = 'abc'
     invalid_post_url = f'{url}{some_uid}'

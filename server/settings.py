@@ -22,16 +22,24 @@ class DBSettings(BaseSettings):
 
 class Settings(BaseSettings):
     ENVIRONMENT: 'Environment'
-    PROJECT_NAME: str = 'app_storage'
-    APP_PORT: int = 8000
-    UNIT_PORT: int = 9000
-    UNIT_HOST: str = '127.0.0.1'
+    PROJECT_NAME: str
+
     DB: 'DBSettings' = DBSettings(_env_file=env_path)
+
+    UNIT_PORT: int = 9000
+    UNIT_HOST: str = 'localhost'
+
+    SERVER_PORT: int = 8000
+
     APP_ID_LENGTH: int = 8
     MAX_PACKAGE_SIZE_MB: int = 5
     APP_ID_CREATION_TRIES_COUNT: int = 5
+
     BASE_DIR: str = path.dirname(path.dirname(path.abspath(__file__)))
-    APPS_DIR: str = path.abspath(path.join(BASE_DIR, pardir, 'apps'))
+    LOCAL_APPS_PATH: str = Field(
+        env='APPS_PATH', default=path.abspath(path.join(BASE_DIR, pardir, 'apps'))
+    )
+    MOUNTED_APPS_PATH: str
 
     @property
     def logging(self) -> dict:
@@ -51,6 +59,24 @@ class Settings(BaseSettings):
             },
             'loggers': {'': {'level': logging.DEBUG, 'handlers': ['console']}},
         }
+
+    @property
+    def apps_path(self):
+        return (
+            self.LOCAL_APPS_PATH
+            if self.ENVIRONMENT == Environment.DEVELOPMENT
+            else self.MOUNTED_APPS_PATH
+        )
+
+    @property
+    def db_dsn(self):
+        return ''.join(
+            [
+                'mongodb://',
+                f'{self.DB.USER}:{self.DB.PASSWORD}',
+                f'@{self.DB.HOST}:{self.DB.PORT}',
+            ]
+        )
 
 
 settings = Settings(_env_file=env_path)

@@ -11,9 +11,10 @@ from typing import Callable, List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from server.exceptions import ApplicationInitError
+from server.exceptions import ApplicationInitError, AppStorageException
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
+from tornado.web import HTTPError
 
 UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
@@ -78,7 +79,7 @@ def create_app_directory() -> str:
             raise ApplicationInitError
 
         application_uid = generate_app_uid()
-        app_dirpath = path.join(settings.APPS_DIR, application_uid)
+        app_dirpath = path.join(settings.apps_path, application_uid)
 
         if not path.exists(app_dirpath):
             mkdir(app_dirpath)
@@ -134,15 +135,16 @@ async def register_app(app_uid: str) -> int:
         'module': 'application',
         'home': venv_dir,
     }
-    request_body = json.dumps(app_data)
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
-    await http_client.fetch(app_url, body=request_body, method='PUT')
+
+    await http_client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
     app_port = get_unused_port()
-    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+
+    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     listener_data = {'pass': f'applications/{app_uid}'}
-    request_body = json.dumps(listener_data)
-    await http_client.fetch(listener_url, body=request_body, method='PUT')
+
+    await http_client.fetch(listener_url, body=json.dumps(listener_data), method='PUT')
 
     return app_port
 
@@ -154,7 +156,7 @@ def destroy_application_environment(app_uid: str) -> None:
     :param app_uid: uid приложения.
     """
 
-    app_dirpath = path.join(settings.APPS_DIR, app_uid)
+    app_dirpath = path.join(settings.apps_path, app_uid)
     shutil.rmtree(app_dirpath)
 
 
@@ -166,7 +168,7 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     :param app_port: порт, который приложение слушает.
     """
 
-    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     await http_client.fetch(listener_url, method='DELETE')
 
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
@@ -178,10 +180,14 @@ def handle_internal_error(func) -> Callable:
     async def wrapper(*args, **kwargs):
         try:
             await func(*args, **kwargs)
-        except Exception as error:
-            message = str(error)
+        except HTTPError as client_error:
+            raise client_error
+        except AppStorageException as client_error:
+            raise HTTPError(status_code=400, log_message=client_error.reason)
+        except Exception as internal_error:
+            message = str(internal_error)
             error_logger.error(message)
             handler = args[0]
-            handler.handle_error(message)
+            handler.handle_internal_error(message)
 
     return wrapper
