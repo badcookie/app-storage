@@ -1,6 +1,10 @@
 .ONESHELL: all
 
-F=tests/
+test_file = ''
+
+test:
+	@export PYTHONPATH="${PYTHONPATH}:."
+	@pytest -s tests/$(test_file)
 
 install:
 	@poetry install
@@ -8,11 +12,8 @@ install:
 	@yarn install
 
 setup:
-	@python setup.py
-
-test:
-	@export PYTHONPATH="${PYTHONPATH}:."
-	@pytest -s $(F)
+	@cd deploy
+	@ansible-playbook -i hosts --limit local setup.yml
 
 server:
 	@export PYTHONPATH="${PYTHONPATH}:."

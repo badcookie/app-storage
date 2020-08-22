@@ -4,5 +4,10 @@
 
 - docker
 - docker-compose
+- ansible
 - poetry
-- npm
+- yarn
+
+### Setup
+
+`make setup`

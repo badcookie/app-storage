@@ -1,0 +1,14 @@
+env: "development"
+project_path: "{{ inventory_dir }}/.."
+
+db_host: localhost
+db_port: 27017
+db_user: badcookie
+db_password: password
+
+unit_host: localhost
+unit_port: 9000
+
+server_port: 8000
+
+apps_path: "{{ project_path }}/apps"

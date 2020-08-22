@@ -1,0 +1,41 @@
+version: "3.5"
+
+{% set develop = ansible_host == 'localhost' %}
+
+services:
+  unit:
+    container_name: "${PROJECT_NAME}_unit"
+    image: nginx/unit:1.15.0-python3.7
+    network_mode: host
+    command:
+      ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-{{ unit_port }}}"]
+    volumes:
+      - {% if develop -%} ${APPS_PATH} {%- else -%} apps_data {%- endif -%}:${MOUNTED_APPS_PATH}
+
+  db:
+    image: mongo
+    container_name: "${PROJECT_NAME}_db"
+    volumes:
+      - db_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT:-{{ db_port }}}:27017"
+
+  server:
+    container_name: "${PROJECT_NAME}_server"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "${PROJECT_NAME}:server"
+    ports:
+      - "${SERVER_PORT:-{{ server_port }}}:${SERVER_PORT:-{{ server_port }}}"
+    volumes:
+      - {% if develop -%} ${APPS_PATH} {%- else -%} apps_data {%- endif -%}:${MOUNTED_APPS_PATH}
+
+
+volumes:
+  db_data: {}{% if not develop %}
+    apps_data: {}
+  {% endif %}

@@ -16,7 +16,7 @@ def validation_rules():
 
 @pytest.fixture
 async def db_connection():
-    client = AsyncIOMotorClient(host=settings.DB.DB_HOST, port=settings.DB.DB_PORT)
+    client = AsyncIOMotorClient(host=settings.DB.HOST, port=settings.DB.PORT)
     db = client.test
     yield db
     await client.drop_database(db)
@@ -57,4 +57,4 @@ def get_items_generator():
 
 @pytest.fixture
 def app():
-    return make_app()
+    return make_app({})
