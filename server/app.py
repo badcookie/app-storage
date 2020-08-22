@@ -2,6 +2,7 @@ import json
 import logging.config
 from io import BytesIO
 from os import path
+from typing import Optional
 from zipfile import ZipFile
 
 from more_itertools import one
@@ -68,12 +69,13 @@ class ApplicationsHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['repository']
 
-    async def get(self, param):
-        query_data = (
-            await self.repository.list()
-            if param is None
-            else await self.repository.get(id=param)
-        )
+    async def get(self, app_id: Optional[str]):
+        if app_id is None:
+            apps = await self.repository.list()
+            query_data = [app.dict() for app in apps]
+        else:
+            app = await self.repository.get(id=app_id)
+            query_data = app.dict()
 
         if query_data is None:
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
