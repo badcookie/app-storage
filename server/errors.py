@@ -48,6 +48,6 @@ def handle_internal_error(func) -> Callable:
                 message = str(error)
                 handler.handle_internal_error(error=message)
 
-            logging.error(message)
+            logging.error(message, extra={'app_uid': 'unknown app'})
 
     return wrapper

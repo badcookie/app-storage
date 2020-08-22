@@ -46,7 +46,9 @@ class Settings(BaseSettings):
         return {
             'version': 1,
             'formatters': {
-                'simple': {'format': '%(asctime)s - %(levelname)s - %(message)s'}
+                'simple': {
+                    'format': '%(asctime)s - %(levelname)s - %(app_uid)s - %(message)s'
+                }
             },
             'handlers': {
                 'console': {

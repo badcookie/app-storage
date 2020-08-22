@@ -103,7 +103,7 @@ def create_application_environment(package: 'ZipFile') -> str:
     package.extractall(app_dir)
     load_app_requirements(app_dir)
 
-    logging.info('[%s] virtual environment created ', app_uid)
+    log_event('virtual environment created', app_uid)
 
     return app_uid
 
@@ -123,8 +123,7 @@ async def register_app(app_uid: str) -> int:
     :return: порт, который приложение будет слушать.
     """
 
-    apps_dir = '/apps/'
-    app_dir = os.path.join(apps_dir, app_uid)
+    app_dir = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
     venv_dir = os.path.join(app_dir, 'venv')
 
     app_data = {
@@ -137,7 +136,7 @@ async def register_app(app_uid: str) -> int:
 
     await http_client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
-    logging.info('[%s] registered app configuration', app_uid)
+    log_event('registered app configuration', app_uid)
 
     app_port = get_unused_port()
 
@@ -146,7 +145,7 @@ async def register_app(app_uid: str) -> int:
 
     await http_client.fetch(listener_url, body=json.dumps(listener_data), method='PUT')
 
-    logging.info('[%s] listener registered on port %s', app_uid, app_port)
+    log_event('listener registered on port %s', app_uid, app_port)
 
     return app_port
 
@@ -161,7 +160,7 @@ def destroy_application_environment(app_uid: str) -> None:
     app_dirpath = path.join(settings.apps_path, app_uid)
     shutil.rmtree(app_dirpath)
 
-    logging.info('[%s] virtual environment destroyed', app_uid)
+    log_event('virtual environment destroyed', app_uid)
 
 
 async def unregister_app(app_uid: str, app_port: int) -> None:
@@ -175,9 +174,17 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     await http_client.fetch(listener_url, method='DELETE')
 
-    logging.info('[%s] unregistered listener on port %s', app_uid, app_port)
+    log_event('unregistered listener on port %s', app_uid, app_port)
 
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
     await http_client.fetch(app_url, method='DELETE')
 
-    logging.info('[%s] unregistered completely', app_uid)
+    log_event('unregistered completely', app_uid)
+
+
+def log_event(message: str, app_uid: str, *args):
+    extra_args = {'app_uid': app_uid}
+    if args:
+        logging.info(message, *args, extra=extra_args)
+    else:
+        logging.info(message, extra=extra_args)
