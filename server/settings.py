@@ -13,6 +13,13 @@ class Environment(str):
     PRODUCTION = 'production'
 
 
+class AppFilter(logging.Filter):
+    def filter(self, record):
+        if not hasattr(record, 'app_uid'):
+            record.app_uid = '-'
+        return True
+
+
 class DBSettings(BaseSettings):
     HOST: str = Field(env='DB_HOST')
     PORT: int = Field(env='DB_PORT', default=27017)
@@ -63,7 +70,14 @@ class Settings(BaseSettings):
                     'formatter': 'simple',
                 },
             },
-            'loggers': {'': {'level': logging.DEBUG, 'handlers': ['console']}},
+            'filters': {'app_filter': {'()': 'server.settings.AppFilter'}},
+            'loggers': {
+                '': {
+                    'level': logging.DEBUG,
+                    'handlers': ['console'],
+                    'filters': ['app_filter'],
+                }
+            },
         }
 
     @property
