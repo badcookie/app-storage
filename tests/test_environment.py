@@ -2,7 +2,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from server import exceptions
+from server import errors
 from server.services import (
     create_app_directory,
     create_application_environment,
@@ -20,19 +20,19 @@ def test_valid_package(get_package, validation_rules):
 
 def test_package_validation_with_missing_required_file(get_package, validation_rules):
     package = get_package('app_with_missing_file')
-    with pytest.raises(exceptions.RequiredFileNotFoundError):
+    with pytest.raises(errors.RequiredFileNotFoundError):
         validate_package(package, validation_rules)
 
 
 def test_package_validation_with_empty_required_file(get_package, validation_rules):
     package = get_package('app_with_empty_file')
-    with pytest.raises(exceptions.EmptyRequiredFileError):
+    with pytest.raises(errors.EmptyRequiredFileError):
         validate_package(package, validation_rules)
 
 
 def test_package_with_invalid_size(get_package, validation_rules):
     package = get_package('heavy_app')
-    with pytest.raises(exceptions.InvalidPackageSizeError):
+    with pytest.raises(errors.InvalidPackageSizeError):
         validate_package(package, validation_rules)
 
 
@@ -65,7 +65,7 @@ def test_failed_app_init(app_id_generator_mock, get_items_generator):
     items_generator = get_items_generator(app_ids)
 
     app_id_generator_mock.side_effect = lambda: next(items_generator)
-    with pytest.raises(exceptions.ApplicationInitError):
+    with pytest.raises(errors.ApplicationInitError):
         create_app_directory()
 
 

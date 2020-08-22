@@ -4,23 +4,19 @@ import os
 import shutil
 import subprocess
 import venv
-from functools import wraps
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
-from typing import Callable, List
+from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from server.exceptions import ApplicationInitError, AppStorageException
+from server.errors import ApplicationInitError
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
-from tornado.web import HTTPError
 
 UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
 http_client = AsyncHTTPClient()
-
-error_logger = logging.getLogger()
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -107,6 +103,8 @@ def create_application_environment(package: 'ZipFile') -> str:
     package.extractall(app_dir)
     load_app_requirements(app_dir)
 
+    log_event('virtual environment created', app_uid)
+
     return app_uid
 
 
@@ -125,8 +123,7 @@ async def register_app(app_uid: str) -> int:
     :return: порт, который приложение будет слушать.
     """
 
-    apps_dir = '/apps/'
-    app_dir = os.path.join(apps_dir, app_uid)
+    app_dir = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
     venv_dir = os.path.join(app_dir, 'venv')
 
     app_data = {
@@ -139,12 +136,16 @@ async def register_app(app_uid: str) -> int:
 
     await http_client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
+    log_event('registered app configuration', app_uid)
+
     app_port = get_unused_port()
 
     listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     listener_data = {'pass': f'applications/{app_uid}'}
 
     await http_client.fetch(listener_url, body=json.dumps(listener_data), method='PUT')
+
+    log_event('listener registered on port %s', app_uid, app_port)
 
     return app_port
 
@@ -159,6 +160,8 @@ def destroy_application_environment(app_uid: str) -> None:
     app_dirpath = path.join(settings.apps_path, app_uid)
     shutil.rmtree(app_dirpath)
 
+    log_event('virtual environment destroyed', app_uid)
+
 
 async def unregister_app(app_uid: str, app_port: int) -> None:
     """
@@ -171,23 +174,17 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     await http_client.fetch(listener_url, method='DELETE')
 
+    log_event('unregistered listener on port %s', app_uid, app_port)
+
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
     await http_client.fetch(app_url, method='DELETE')
 
+    log_event('unregistered completely', app_uid)
 
-def handle_internal_error(func) -> Callable:
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            await func(*args, **kwargs)
-        except HTTPError as client_error:
-            raise client_error
-        except AppStorageException as client_error:
-            raise HTTPError(status_code=400, log_message=client_error.reason)
-        except Exception as internal_error:
-            message = str(internal_error)
-            error_logger.error(message)
-            handler = args[0]
-            handler.handle_internal_error(message)
 
-    return wrapper
+def log_event(message: str, app_uid: str, *args):
+    extra_args = {'app_uid': app_uid}
+    if args:
+        logging.info(message, *args, extra=extra_args)
+    else:
+        logging.info(message, extra=extra_args)

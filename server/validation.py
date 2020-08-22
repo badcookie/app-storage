@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import TYPE_CHECKING
 
-from server.exceptions import (
+from server.errors import (
     EmptyRequiredFileError,
     InvalidPackageSizeError,
     RequiredFileNotFoundError,

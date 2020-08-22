@@ -19,6 +19,12 @@ class DBSettings(BaseSettings):
     USER: str = Field(env='DB_USER')
     PASSWORD: str = Field(env='DB_PASSWORD')
 
+    @property
+    def dsn(self):
+        return ''.join(
+            ['mongodb://', f'{self.USER}:{self.PASSWORD}', f'@{self.HOST}:{self.PORT}']
+        )
+
 
 class Settings(BaseSettings):
     ENVIRONMENT: 'Environment'
@@ -47,7 +53,7 @@ class Settings(BaseSettings):
             'version': 1,
             'formatters': {
                 'simple': {
-                    'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                    'format': '%(asctime)s - %(levelname)s - %(app_uid)s - %(message)s'
                 }
             },
             'handlers': {
@@ -66,16 +72,6 @@ class Settings(BaseSettings):
             self.LOCAL_APPS_PATH
             if self.ENVIRONMENT == Environment.DEVELOPMENT
             else self.MOUNTED_APPS_PATH
-        )
-
-    @property
-    def db_dsn(self):
-        return ''.join(
-            [
-                'mongodb://',
-                f'{self.DB.USER}:{self.DB.PASSWORD}',
-                f'@{self.DB.HOST}:{self.DB.PORT}',
-            ]
         )
 
 

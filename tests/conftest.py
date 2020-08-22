@@ -23,7 +23,7 @@ def validation_rules():
 
 @pytest.fixture
 async def db_connection():
-    client = AsyncIOMotorClient(settings.db_dsn)
+    client = AsyncIOMotorClient(settings.DB.dsn)
     db = client.test
     yield db
     await client.drop_database(db)
