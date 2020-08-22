@@ -2,25 +2,31 @@ import json
 from os import path
 
 import pytest
-import requests
 from requests import Request
 from server.services import UNIT_BASE_URL
 from server.settings import settings
+from tornado.httpclient import AsyncHTTPClient
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 
+async_http_client = AsyncHTTPClient()
+
 
 @pytest.fixture(autouse=True)
-def teardown_unit():
+async def teardown_unit():
     yield
-    requests.delete(UNIT_BASE_URL)
+    config = {'applications': {}, 'listeners': {}}
+    request_data = json.dumps(config)
+    response = await async_http_client.fetch(
+        UNIT_BASE_URL, body=request_data, method='PUT'
+    )
+    assert response.code == 200
 
 
 @pytest.fixture
 def routes(base_url):
     return {
-        'index': lambda: f'{base_url}',
         'app_list': lambda: f'{base_url}/applications/',
         'app_detail': lambda app_id: f'{base_url}/applications/{app_id}',
     }
@@ -81,7 +87,7 @@ async def test_successful_app_lifecycle(
     app_id = app_data['id']
     app_uid = app_data['uid']
 
-    app_path = path.join(settings.APPS_DIR, app_uid)
+    app_path = path.join(settings.apps_path, app_uid)
 
     repo = app.settings['repository']
     saved_app = await repo.get(id=app_id)

@@ -11,14 +11,7 @@ logger = logging.getLogger('app')
 
 
 def init_app_options() -> dict:
-    dsn = ''.join(
-        [
-            'mongodb://',
-            f'{settings.DB.USER}:{settings.DB.PASSWORD}',
-            f'@{settings.DB.HOST}:{settings.DB.PORT}',
-        ]
-    )
-    db = MotorClient(dsn).default
+    db = MotorClient(settings.db_dsn).default
     debug = settings.ENVIRONMENT == Environment.DEVELOPMENT
 
     return {'repository': ApplicationRepository(db), 'debug': debug}

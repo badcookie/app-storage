@@ -23,14 +23,7 @@ def validation_rules():
 
 @pytest.fixture
 async def db_connection():
-    dsn = ''.join(
-        [
-            'mongodb://',
-            f'{settings.DB.USER}:{settings.DB.PASSWORD}',
-            f'@{settings.DB.HOST}:{settings.DB.PORT}',
-        ]
-    )
-    client = AsyncIOMotorClient(dsn)
+    client = AsyncIOMotorClient(settings.db_dsn)
     db = client.test
     yield db
     await client.drop_database(db)

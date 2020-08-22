@@ -68,5 +68,15 @@ class Settings(BaseSettings):
             else self.MOUNTED_APPS_PATH
         )
 
+    @property
+    def db_dsn(self):
+        return ''.join(
+            [
+                'mongodb://',
+                f'{self.DB.USER}:{self.DB.PASSWORD}',
+                f'@{self.DB.HOST}:{self.DB.PORT}',
+            ]
+        )
+
 
 settings = Settings(_env_file=env_path)

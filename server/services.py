@@ -79,7 +79,7 @@ def create_app_directory() -> str:
             raise ApplicationInitError
 
         application_uid = generate_app_uid()
-        app_dirpath = path.join(settings.APPS_DIR, application_uid)
+        app_dirpath = path.join(settings.apps_path, application_uid)
 
         if not path.exists(app_dirpath):
             mkdir(app_dirpath)
@@ -135,15 +135,16 @@ async def register_app(app_uid: str) -> int:
         'module': 'application',
         'home': venv_dir,
     }
-    request_body = json.dumps(app_data)
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
-    await http_client.fetch(app_url, body=request_body, method='PUT')
+
+    await http_client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
     app_port = get_unused_port()
-    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+
+    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     listener_data = {'pass': f'applications/{app_uid}'}
-    request_body = json.dumps(listener_data)
-    await http_client.fetch(listener_url, body=request_body, method='PUT')
+
+    await http_client.fetch(listener_url, body=json.dumps(listener_data), method='PUT')
 
     return app_port
 
@@ -155,7 +156,7 @@ def destroy_application_environment(app_uid: str) -> None:
     :param app_uid: uid приложения.
     """
 
-    app_dirpath = path.join(settings.APPS_DIR, app_uid)
+    app_dirpath = path.join(settings.apps_path, app_uid)
     shutil.rmtree(app_dirpath)
 
 
@@ -167,7 +168,7 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     :param app_port: порт, который приложение слушает.
     """
 
-    listener_url = f'{UNIT_BASE_URL}/listeners/{settings.UNIT_HOST}:{app_port}/'
+    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
     await http_client.fetch(listener_url, method='DELETE')
 
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
