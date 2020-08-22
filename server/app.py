@@ -39,7 +39,7 @@ class BaseHandler(web.RequestHandler):
         self.set_status(204)
         self.finish()
 
-    def handle_error(self, error):
+    def handle_internal_error(self, error):
         self.set_status(500)
         self.finish(error)
 
@@ -69,14 +69,6 @@ class ApplicationsHandler(BaseHandler):
 
         if query_data is None:
             raise web.HTTPError(404)
-
-        # Temp
-        if param is None:
-            fake_apps = [
-                {'id': 1, 'port': 1234, 'uid': 'abc'},
-                {'id': 2, 'port': 1499, 'uid': 'def'},
-            ]
-            query_data.extend(fake_apps)
 
         result = json.dumps(query_data)
         return self.write(result)

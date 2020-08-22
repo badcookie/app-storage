@@ -11,9 +11,10 @@ from typing import Callable, List
 from uuid import uuid4
 from zipfile import ZipFile
 
-from server.exceptions import ApplicationInitError
+from server.exceptions import ApplicationInitError, AppStorageException
 from server.settings import settings
 from tornado.httpclient import AsyncHTTPClient
+from tornado.web import HTTPError
 
 UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
 
@@ -178,10 +179,14 @@ def handle_internal_error(func) -> Callable:
     async def wrapper(*args, **kwargs):
         try:
             await func(*args, **kwargs)
-        except Exception as error:
-            message = str(error)
+        except HTTPError as client_error:
+            raise client_error
+        except AppStorageException as client_error:
+            raise HTTPError(status_code=400, log_message=client_error.reason)
+        except Exception as internal_error:
+            message = str(internal_error)
             error_logger.error(message)
             handler = args[0]
-            handler.handle_error(message)
+            handler.handle_internal_error(message)
 
     return wrapper

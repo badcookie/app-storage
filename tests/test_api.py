@@ -2,11 +2,19 @@ import json
 from os import path
 
 import pytest
+import requests
 from requests import Request
+from server.services import UNIT_BASE_URL
 from server.settings import settings
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
+
+
+@pytest.fixture(autouse=True)
+def teardown_unit():
+    yield
+    requests.delete(UNIT_BASE_URL)
 
 
 @pytest.fixture
@@ -101,7 +109,7 @@ async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
     response = await http_client.fetch(
         url, method='POST', raise_error=False, **request_data,
     )
-    assert response.code == 500
+    assert response.code == 400
 
     some_uid = 'abc'
     invalid_post_url = f'{url}{some_uid}'
