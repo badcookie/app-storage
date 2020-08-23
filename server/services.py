@@ -6,15 +6,18 @@ import subprocess
 import venv
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
+from time import time
 from typing import List
 from uuid import uuid4
 from zipfile import ZipFile
 
 from server.errors import ApplicationInitError
 from server.settings import settings
+from server.validation import ENV_FILE_NAME
 from tornado.httpclient import AsyncHTTPClient
 
 UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
+MODIFIED_AT_ENV = 'MODIFIED_AT'
 
 http_client = AsyncHTTPClient()
 
@@ -35,6 +38,19 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
         if not constraint_is_fulfilled(package):
             exception = rule['exception']
             raise exception()
+
+
+def get_app_environment_variables(env_file_path: str) -> dict:
+    """
+    Считывает переменные среды приложения и записывает в локальную структуру.
+
+    :param env_file_path: путь до файла с переменными окружения.
+    :return: распарсенные переменные среды.
+    """
+
+    with open(env_file_path, 'r') as file:
+        variables = [variable_line.split('=') for variable_line in file]
+        return {name: value for name, value in variables}
 
 
 def load_app_requirements(app_dir: str) -> None:
@@ -133,14 +149,25 @@ async def register_app(app_uid: str) -> int:
     :return: порт, который приложение будет слушать.
     """
 
-    app_dir = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-    venv_dir = os.path.join(app_dir, 'venv')
+    app_dir = os.path.join(settings.apps_path, app_uid)
+
+    predefined_env_variables = (
+        get_app_environment_variables(os.path.join(app_dir, ENV_FILE_NAME))
+        if ENV_FILE_NAME in os.listdir(app_dir)
+        else {}
+    )
+
+    env_variables = {f'{MODIFIED_AT_ENV}': str(time()), **predefined_env_variables}
+
+    unit_app_dir = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+    venv_dir = os.path.join(unit_app_dir, 'venv')
 
     app_data = {
         'type': 'python 3',
-        'path': app_dir,
+        'path': unit_app_dir,
         'module': 'application',
         'home': venv_dir,
+        'environment': env_variables,
     }
     app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
 
@@ -192,7 +219,7 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     log_event('unregistered completely', app_uid)
 
 
-def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
+async def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
     """
     Полностью обновляет содержимое приложения,
     переустанавливает зависимости.
@@ -208,6 +235,16 @@ def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
     load_app_requirements(app_dirpath)
 
     log_event('virtual environment updated', app_uid)
+
+    updated_modification_time = time()
+    app_env_url = (
+        f'{UNIT_BASE_URL}/applications/{app_uid}/environment/{MODIFIED_AT_ENV}'
+    )
+    await http_client.fetch(
+        app_env_url, body=str(updated_modification_time), method='PUT'
+    )
+
+    log_event('app configuration updated', app_uid)
 
 
 def log_event(message: str, app_uid: str, *args):

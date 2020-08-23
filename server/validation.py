@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 
 required_files = ['requirements.txt', 'application.py']
+ENV_FILE_NAME = '.env'
 
 
 def mb_to_bytes(mb: int) -> int:

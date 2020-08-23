@@ -108,7 +108,7 @@ async def test_successful_app_lifecycle(
     app_url = f'http://localhost:{app_port}/'
     app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
     response_data = app_response.body.decode()
-    assert response_data == 'It works too'
+    assert response_data == 2
 
     book_id = 5
     app_detail_url = f'http://localhost:{app_port}/books/{book_id}/'
