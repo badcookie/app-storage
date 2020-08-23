@@ -9,6 +9,7 @@ from more_itertools import one
 from server.domain import Application
 from server.errors import (
     APP_NOT_FOUND_MESSAGE,
+    RESOURCE_ID_EXPECTED_MESSAGE,
     UNEXPECTED_PARAM_MESSAGE,
     handle_internal_error,
 )
@@ -36,12 +37,13 @@ def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
 
 class BaseHandler(web.RequestHandler):
     def set_default_headers(self) -> None:
-        super().set_default_headers()
         self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Access-Control-Allow-Methods', 'GET,POST,DELETE,PUT')
+        self.set_header(
+            'Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS'
+        )
 
-    def options(self):
-        self.set_status(204)
+    def options(self, *args, **kwargs):
+        self.set_status(200)
         self.finish()
 
     def handle_client_error(self, status: int, error: str) -> None:
@@ -69,7 +71,7 @@ class ApplicationsHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['repository']
 
-    async def get(self, app_id: Optional[str]):
+    async def get(self, app_id: Optional[str] = None):
         if app_id is None:
             apps = await self.repository.list()
             query_data = [app.dict() for app in apps]
@@ -84,7 +86,7 @@ class ApplicationsHandler(BaseHandler):
         return self.write(result)
 
     @handle_internal_error
-    async def post(self, param):
+    async def post(self, param=None):
         if param is not None:
             raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
@@ -102,7 +104,10 @@ class ApplicationsHandler(BaseHandler):
         self.write(app_data)
 
     @handle_internal_error
-    async def delete(self, app_id: str):
+    async def delete(self, app_id: str = None):
+        if app_id is None:
+            raise web.HTTPError(400, reason=RESOURCE_ID_EXPECTED_MESSAGE)
+
         app_to_delete = await self.repository.get(id=app_id)
 
         if app_to_delete is None:
@@ -126,7 +131,8 @@ def make_app(options) -> 'web.Application':
 
     routes = [
         (r'/', IndexHandler),
-        (r'/applications/([^/]+)?', ApplicationsHandler),
+        (r'/applications/', ApplicationsHandler),
+        (r'/applications/([^/]+)/?', ApplicationsHandler),
     ]
 
     return web.Application(
