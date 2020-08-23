@@ -28,7 +28,7 @@ async def teardown_unit():
 def routes(base_url):
     return {
         'app_list': lambda: f'{base_url}/applications/',
-        'app_detail': lambda app_id: f'{base_url}/applications/{app_id}',
+        'app_detail': lambda app_id: f'{base_url}/applications/{app_id}/',
     }
 
 
