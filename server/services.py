@@ -53,6 +53,16 @@ def load_app_requirements(app_dir: str) -> None:
     )
 
 
+def clear_app_directory(app_dirpath: str) -> None:
+    for filename in os.listdir(app_dirpath):
+        file_path = os.path.join(app_dirpath, filename)
+
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+
 def generate_app_uid() -> str:
     return uuid4().hex[: settings.APP_ID_LENGTH]
 
@@ -180,6 +190,24 @@ async def unregister_app(app_uid: str, app_port: int) -> None:
     await http_client.fetch(app_url, method='DELETE')
 
     log_event('unregistered completely', app_uid)
+
+
+def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
+    """
+    Полностью обновляет содержимое приложения,
+    переустанавливает зависимости.
+
+    :param app_uid: uid приложения, содержимое которого нужно обновить.
+    :param package: zip архив с новыми файлами приложения и зависимостей.
+    """
+
+    app_dirpath = os.path.join(settings.apps_path, app_uid)
+
+    clear_app_directory(app_dirpath)
+    package.extractall(app_dirpath)
+    load_app_requirements(app_dirpath)
+
+    log_event('virtual environment updated', app_uid)
 
 
 def log_event(message: str, app_uid: str, *args):

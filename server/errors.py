@@ -7,6 +7,8 @@ from tornado.web import HTTPError
 
 APP_NOT_FOUND_MESSAGE = 'Application not found'
 UNEXPECTED_PARAM_MESSAGE = 'Unexpected param'
+RESOURCE_ID_EXPECTED_MESSAGE = 'Resource id expected'
+FILE_EXPECTED_MESSAGE = 'Request file expected'
 
 
 class AppStorageException(Exception):

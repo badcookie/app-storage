@@ -5,10 +5,11 @@ from os import path
 from typing import Optional
 from zipfile import ZipFile
 
-from more_itertools import one
 from server.domain import Application
 from server.errors import (
     APP_NOT_FOUND_MESSAGE,
+    FILE_EXPECTED_MESSAGE,
+    RESOURCE_ID_EXPECTED_MESSAGE,
     UNEXPECTED_PARAM_MESSAGE,
     handle_internal_error,
 )
@@ -17,6 +18,7 @@ from server.services import (
     destroy_application_environment,
     register_app,
     unregister_app,
+    update_application_environment,
     validate_package,
 )
 from server.settings import settings
@@ -27,21 +29,26 @@ from tornado.httputil import HTTPServerRequest
 logger = logging.getLogger(__name__)
 
 
-def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
+def get_request_file(request: 'HTTPServerRequest') -> Optional['ZipFile']:
     files = request.files
-    file_data = one(files.get('zipfile'))
-    file_body = file_data['body']
+    file_data = files.get('zipfile')
+
+    if not file_data:
+        return None
+
+    file_body = file_data[0]['body']
     return ZipFile(BytesIO(file_body), 'r')
 
 
 class BaseHandler(web.RequestHandler):
     def set_default_headers(self) -> None:
-        super().set_default_headers()
         self.set_header('Access-Control-Allow-Origin', '*')
-        self.set_header('Access-Control-Allow-Methods', 'GET,POST,DELETE,PUT')
+        self.set_header(
+            'Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS'
+        )
 
-    def options(self):
-        self.set_status(204)
+    def options(self, *args, **kwargs):
+        self.set_status(200)
         self.finish()
 
     def handle_client_error(self, status: int, error: str) -> None:
@@ -69,7 +76,7 @@ class ApplicationsHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['repository']
 
-    async def get(self, app_id: Optional[str]):
+    async def get(self, app_id: Optional[str] = None):
         if app_id is None:
             apps = await self.repository.list()
             query_data = [app.dict() for app in apps]
@@ -84,11 +91,15 @@ class ApplicationsHandler(BaseHandler):
         return self.write(result)
 
     @handle_internal_error
-    async def post(self, param):
+    async def post(self, param=None):
         if param is not None:
             raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
         file = get_request_file(self.request)
+
+        if not file:
+            raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
+
         validate_package(file, VALIDATION_RULES)
 
         app_uid = create_application_environment(file)
@@ -102,7 +113,29 @@ class ApplicationsHandler(BaseHandler):
         self.write(app_data)
 
     @handle_internal_error
-    async def delete(self, app_id: str):
+    async def put(self, app_id: str = None):
+        if app_id is None:
+            raise web.HTTPError(400, reason=RESOURCE_ID_EXPECTED_MESSAGE)
+
+        file = get_request_file(self.request)
+
+        if not file:
+            raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
+
+        app_to_update = await self.repository.get(id=app_id)
+
+        if app_to_update is None:
+            raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
+
+        update_application_environment(app_to_update.uid, file)
+
+        self.set_status(200)
+
+    @handle_internal_error
+    async def delete(self, app_id: str = None):
+        if app_id is None:
+            raise web.HTTPError(400, reason=RESOURCE_ID_EXPECTED_MESSAGE)
+
         app_to_delete = await self.repository.get(id=app_id)
 
         if app_to_delete is None:
@@ -126,7 +159,8 @@ def make_app(options) -> 'web.Application':
 
     routes = [
         (r'/', IndexHandler),
-        (r'/applications/([^/]+)?', ApplicationsHandler),
+        (r'/applications/', ApplicationsHandler),
+        (r'/applications/([^/]+)/?', ApplicationsHandler),
     ]
 
     return web.Application(

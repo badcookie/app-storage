@@ -46,7 +46,7 @@ def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_gener
     app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids[:-1]:
-        os.mkdir(os.path.join(settings.APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.apps_path, uid))
 
     items_generator = get_items_generator(app_ids)
 
@@ -60,7 +60,7 @@ def test_failed_app_init(app_id_generator_mock, get_items_generator):
     app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids:
-        os.mkdir(os.path.join(settings.APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.apps_path, uid))
 
     items_generator = get_items_generator(app_ids)
 
@@ -74,7 +74,7 @@ def test_environment_creation(get_package, validation_rules):
     validate_package(package, validation_rules)
 
     app_id = create_application_environment(package)
-    app_dirpath = os.path.join(settings.APPS_DIR, app_id)
+    app_dirpath = os.path.join(settings.apps_path, app_id)
     assert os.path.exists(app_dirpath)
 
     extracted_files = os.listdir(app_dirpath)
