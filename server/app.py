@@ -5,10 +5,10 @@ from os import path
 from typing import Optional
 from zipfile import ZipFile
 
-from more_itertools import one
 from server.domain import Application
 from server.errors import (
     APP_NOT_FOUND_MESSAGE,
+    FILE_EXPECTED_MESSAGE,
     RESOURCE_ID_EXPECTED_MESSAGE,
     UNEXPECTED_PARAM_MESSAGE,
     handle_internal_error,
@@ -18,6 +18,7 @@ from server.services import (
     destroy_application_environment,
     register_app,
     unregister_app,
+    update_application_environment,
     validate_package,
 )
 from server.settings import settings
@@ -28,10 +29,14 @@ from tornado.httputil import HTTPServerRequest
 logger = logging.getLogger(__name__)
 
 
-def get_request_file(request: 'HTTPServerRequest') -> 'ZipFile':
+def get_request_file(request: 'HTTPServerRequest') -> Optional['ZipFile']:
     files = request.files
-    file_data = one(files.get('zipfile'))
-    file_body = file_data['body']
+    file_data = files.get('zipfile')
+
+    if not file_data:
+        return None
+
+    file_body = file_data[0]['body']
     return ZipFile(BytesIO(file_body), 'r')
 
 
@@ -91,6 +96,10 @@ class ApplicationsHandler(BaseHandler):
             raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
         file = get_request_file(self.request)
+
+        if not file:
+            raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
+
         validate_package(file, VALIDATION_RULES)
 
         app_uid = create_application_environment(file)
@@ -102,6 +111,25 @@ class ApplicationsHandler(BaseHandler):
         app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
         self.set_status(201)
         self.write(app_data)
+
+    @handle_internal_error
+    async def put(self, app_id: str = None):
+        if app_id is None:
+            raise web.HTTPError(400, reason=RESOURCE_ID_EXPECTED_MESSAGE)
+
+        file = get_request_file(self.request)
+
+        if not file:
+            raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
+
+        app_to_update = await self.repository.get(id=app_id)
+
+        if app_to_update is None:
+            raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
+
+        update_application_environment(app_to_update.uid, file)
+
+        self.set_status(200)
 
     @handle_internal_error
     async def delete(self, app_id: str = None):
