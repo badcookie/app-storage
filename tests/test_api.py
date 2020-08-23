@@ -65,13 +65,9 @@ async def test_successful_app_lifecycle(
     request_data = prepare_send_file_request('valid_app')
     assert request_data
 
-    create_url = routes['app_list']()
+    list_url = routes['app_list']()
     response = await http_client.fetch(
-        create_url,
-        method='POST',
-        **request_data,
-        raise_error=False,
-        request_timeout=90,
+        list_url, method='POST', **request_data, raise_error=False, request_timeout=90,
     )
     assert response.code == 201
 
@@ -95,8 +91,34 @@ async def test_successful_app_lifecycle(
 
     assert path.exists(app_path)
 
-    delete_url = routes['app_detail'](app_id)
-    response = await http_client.fetch(delete_url, method='DELETE', raise_error=False)
+    update_request_data = prepare_send_file_request('another_valid_app')
+    assert update_request_data
+
+    detail_url = routes['app_detail'](app_id)
+    response = await http_client.fetch(
+        detail_url,
+        method='PUT',
+        **update_request_data,
+        raise_error=False,
+        request_timeout=90,
+    )
+    assert response.code == 200
+    assert path.exists(app_path)
+
+    app_url = f'http://localhost:{app_port}/'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    response_data = app_response.body.decode()
+    assert response_data == 'It works too'
+
+    book_id = 5
+    app_detail_url = f'http://localhost:{app_port}/books/{book_id}/'
+    app_response = await http_client.fetch(
+        app_detail_url, method='DELETE', raise_error=False
+    )
+    response_data = app_response.body.decode()
+    assert response_data == book_id
+
+    response = await http_client.fetch(detail_url, method='DELETE', raise_error=False)
     assert response.code == 204
 
     deleted_app = await repo.get(id=app_id)

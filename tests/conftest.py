@@ -42,9 +42,9 @@ def get_package():
 
     yield getter
 
-    (package_dir,) = cache
-    cache[package_dir].close()
-    os.remove(package_dir)
+    for package_dir in cache:
+        cache[package_dir].close()
+        os.remove(package_dir)
 
 
 @pytest.fixture(scope='session', autouse=True)
