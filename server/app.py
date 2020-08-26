@@ -16,8 +16,7 @@ from server.errors import (
 from server.services import (
     create_application_environment,
     destroy_application_environment,
-    register_app,
-    unregister_app,
+    get_app_environment_data,
     update_application_environment,
     validate_package,
 )
@@ -41,6 +40,11 @@ def get_request_file(request: 'HTTPServerRequest') -> Optional['ZipFile']:
 
 
 class BaseHandler(web.RequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.repository = self.application.settings['repository']
+        self.configurator = self.application.settings['configurator']
+
     def set_default_headers(self) -> None:
         self.set_header('Access-Control-Allow-Origin', '*')
         self.set_header(
@@ -72,10 +76,6 @@ class ApplicationsHandler(BaseHandler):
     и сохраняет в бд данные о приложении.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.repository = self.application.settings['repository']
-
     async def get(self, app_id: Optional[str] = None):
         if app_id is None:
             apps = await self.repository.list()
@@ -103,7 +103,8 @@ class ApplicationsHandler(BaseHandler):
         validate_package(file, VALIDATION_RULES)
 
         app_uid = create_application_environment(file)
-        app_port = await register_app(app_uid)
+        enviroment_variables = get_app_environment_data(app_uid)
+        app_port = await self.configurator.register_app(app_uid, enviroment_variables)
 
         app = Application(uid=app_uid, port=app_port)
         app_id = await self.repository.add(app)
@@ -127,7 +128,7 @@ class ApplicationsHandler(BaseHandler):
         if app_to_update is None:
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
-        update_application_environment(app_to_update.uid, file)
+        await update_application_environment(app_to_update.uid, file)
 
         self.set_status(200)
 
@@ -144,7 +145,7 @@ class ApplicationsHandler(BaseHandler):
         uid = app_to_delete.uid
         port = app_to_delete.port
 
-        await unregister_app(uid, port)
+        await self.configurator.unregister_app(uid, port)
         destroy_application_environment(uid)
         await self.repository.delete(id=app_id)
 

@@ -9,6 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from server.app import make_app
 from server.domain import ApplicationReadOnly
 from server.repository import Repository
+from server.services import UnitService
 from server.settings import settings
 from server.validation import VALIDATION_RULES
 
@@ -93,7 +94,7 @@ class TestRepository(Repository):
 
 def init_app_options():
     db = []
-    return {'repository': TestRepository(db)}
+    return {'repository': TestRepository(db), 'configurator': UnitService()}
 
 
 @pytest.fixture

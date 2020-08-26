@@ -13,13 +13,103 @@ from zipfile import ZipFile
 
 from server.errors import ApplicationInitError
 from server.settings import settings
-from server.validation import ENV_FILE_NAME
+from server.validation import ENV_FILE_NAME, REQUIREMENTS_FILE_NAME
 from tornado.httpclient import AsyncHTTPClient
 
-UNIT_BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
-MODIFIED_AT_ENV = 'MODIFIED_AT'
 
-http_client = AsyncHTTPClient()
+class UnitService:
+    BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
+    MODIFIED_AT_ENV = 'APPGEN'
+
+    client = AsyncHTTPClient()
+
+    async def register_app(self, app_uid: str, environment_data: dict) -> int:
+        """Регистрирует приложение в файловой системе
+
+        :param app_uid: uid приложения
+        :param environment_data: переменные среды приложения
+        :returns порт, по которому доступно приложение
+        """
+
+        environment = {f'{self.MODIFIED_AT_ENV}': str(time()), **environment_data}
+
+        unit_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        venv_dir = os.path.join(unit_app_path, 'venv')
+
+        app_data = {
+            'type': 'python 3',
+            'path': unit_app_path,
+            'module': 'application',
+            'home': venv_dir,
+            'environment': environment,
+        }
+        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
+
+        await self.client.fetch(app_url, body=json.dumps(app_data), method='PUT')
+
+        log_event('registered app configuration', app_uid)
+
+        app_port = get_unused_port()
+
+        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
+        listener_data = {'pass': f'applications/{app_uid}'}
+
+        await self.client.fetch(
+            listener_url, body=json.dumps(listener_data), method='PUT'
+        )
+
+        log_event('listener registered on port %s', app_uid, app_port)
+
+        return app_port
+
+    async def unregister_app(self, app_uid: str, app_port: int) -> None:
+        """Удаляет приложение из конфигурации
+
+        :param app_uid: uid приложения
+        :param app_port: порт приложения
+        """
+
+        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
+        await self.client.fetch(listener_url, method='DELETE')
+
+        log_event('unregistered listener on port %s', app_uid, app_port)
+
+        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
+        await self.client.fetch(app_url, method='DELETE')
+
+        log_event('unregistered completely', app_uid)
+
+    async def reload_app(self, app_uid: str) -> None:
+        """Перезагружает приложение через обновление переменной среды.
+        Сейчас документация предлагает только такой способ
+
+        :param app_uid: uid приложения
+        """
+
+        updated_modification_time = time()
+
+        app_env_url = (
+            f'{self.BASE_URL}/applications/{app_uid}/environment/{self.MODIFIED_AT_ENV}'
+        )
+
+        res = await self.client.fetch(
+            app_env_url,
+            body=str(updated_modification_time),
+            method='PUT',
+            raise_error=False,
+        )
+        if res.code == 400:
+            print(res.body.decode())
+            raise Exception('shit')
+
+        log_event('app configuration updated', app_uid)
+
+    async def reset_configuration(self) -> None:
+        """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
+
+        config = {'applications': {}, 'listeners': {}}
+        request_data = json.dumps(config)
+        await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -40,7 +130,7 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
             raise exception()
 
 
-def get_app_environment_variables(env_file_path: str) -> dict:
+def parse_environment_variables(env_file_path: str) -> dict:
     """
     Считывает переменные среды приложения и записывает в локальную структуру.
 
@@ -51,6 +141,12 @@ def get_app_environment_variables(env_file_path: str) -> dict:
     with open(env_file_path, 'r') as file:
         variables = [variable_line.split('=') for variable_line in file]
         return {name: value for name, value in variables}
+
+
+def get_app_environment_data(app_uid: str) -> dict:
+    app_path = os.path.join(settings.apps_path, app_uid)
+    env_path = os.path.join(app_path, ENV_FILE_NAME)
+    return parse_environment_variables(env_path)
 
 
 def load_app_requirements(app_dir: str) -> None:
@@ -65,7 +161,7 @@ def load_app_requirements(app_dir: str) -> None:
     venv.create(venv_dir, with_pip=True)
 
     subprocess.check_call(
-        ['venv/bin/pip', 'install', '-r', 'requirements.txt'], cwd=app_dir
+        ['venv/bin/pip', 'install', '-r', REQUIREMENTS_FILE_NAME], cwd=app_dir
     )
 
 
@@ -140,53 +236,6 @@ def get_unused_port() -> int:
         return sock.getsockname()[1]
 
 
-async def register_app(app_uid: str) -> int:
-    """
-    Регистрирует приложение в n/unit, делая
-    запросы на обновление конфигурации.
-
-    :param app_uid: uid приложения.
-    :return: порт, который приложение будет слушать.
-    """
-
-    app_dir = os.path.join(settings.apps_path, app_uid)
-
-    predefined_env_variables = (
-        get_app_environment_variables(os.path.join(app_dir, ENV_FILE_NAME))
-        if ENV_FILE_NAME in os.listdir(app_dir)
-        else {}
-    )
-
-    env_variables = {f'{MODIFIED_AT_ENV}': str(time()), **predefined_env_variables}
-
-    unit_app_dir = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-    venv_dir = os.path.join(unit_app_dir, 'venv')
-
-    app_data = {
-        'type': 'python 3',
-        'path': unit_app_dir,
-        'module': 'application',
-        'home': venv_dir,
-        'environment': env_variables,
-    }
-    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
-
-    await http_client.fetch(app_url, body=json.dumps(app_data), method='PUT')
-
-    log_event('registered app configuration', app_uid)
-
-    app_port = get_unused_port()
-
-    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
-    listener_data = {'pass': f'applications/{app_uid}'}
-
-    await http_client.fetch(listener_url, body=json.dumps(listener_data), method='PUT')
-
-    log_event('listener registered on port %s', app_uid, app_port)
-
-    return app_port
-
-
 def destroy_application_environment(app_uid: str) -> None:
     """
     Удаляет окружение приложения из фс.
@@ -198,25 +247,6 @@ def destroy_application_environment(app_uid: str) -> None:
     shutil.rmtree(app_dirpath)
 
     log_event('virtual environment destroyed', app_uid)
-
-
-async def unregister_app(app_uid: str, app_port: int) -> None:
-    """
-    Удаляет данные о приложении из конфигурации n/unit.
-
-    :param app_uid: uid приложения.
-    :param app_port: порт, который приложение слушает.
-    """
-
-    listener_url = f'{UNIT_BASE_URL}/listeners/*:{app_port}/'
-    await http_client.fetch(listener_url, method='DELETE')
-
-    log_event('unregistered listener on port %s', app_uid, app_port)
-
-    app_url = f'{UNIT_BASE_URL}/applications/{app_uid}/'
-    await http_client.fetch(app_url, method='DELETE')
-
-    log_event('unregistered completely', app_uid)
 
 
 async def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
@@ -235,16 +265,6 @@ async def update_application_environment(app_uid: str, package: 'ZipFile') -> No
     load_app_requirements(app_dirpath)
 
     log_event('virtual environment updated', app_uid)
-
-    updated_modification_time = time()
-    app_env_url = (
-        f'{UNIT_BASE_URL}/applications/{app_uid}/environment/{MODIFIED_AT_ENV}'
-    )
-    await http_client.fetch(
-        app_env_url, body=str(updated_modification_time), method='PUT'
-    )
-
-    log_event('app configuration updated', app_uid)
 
 
 def log_event(message: str, app_uid: str, *args):

@@ -12,8 +12,10 @@ if TYPE_CHECKING:
     from zipfile import ZipFile
 
 
-required_files = ['requirements.txt', 'application.py']
 ENV_FILE_NAME = '.env'
+REQUIREMENTS_FILE_NAME = 'requirements.txt'
+
+REQUIRED_FILES = [REQUIREMENTS_FILE_NAME, ENV_FILE_NAME]
 
 
 def mb_to_bytes(mb: int) -> int:
@@ -27,7 +29,7 @@ def get_package_size_bytes(package: 'ZipFile') -> int:
 
 def required_files_included(package: 'ZipFile') -> bool:
     package_filenames = package.namelist()
-    return set(required_files).issubset(package_filenames)
+    return set(REQUIRED_FILES).issubset(package_filenames)
 
 
 def package_size_valid(package: 'ZipFile') -> bool:
@@ -38,9 +40,9 @@ def package_size_valid(package: 'ZipFile') -> bool:
 
 def required_files_not_empty(package: 'ZipFile') -> bool:
     empty_files = [
-        *filter(
-            lambda filename: package.getinfo(filename).file_size == 0, required_files
-        )
+        filename
+        for filename in REQUIRED_FILES
+        if package.getinfo(filename).file_size == 0
     ]
     return len(empty_files) == 0
 
