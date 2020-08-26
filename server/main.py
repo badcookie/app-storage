@@ -3,6 +3,7 @@ import logging
 from motor.motor_tornado import MotorClient
 from server.app import make_app
 from server.repository import ApplicationRepository
+from server.services import UnitService
 from server.settings import Environment, settings
 from tornado.ioloop import IOLoop
 
@@ -11,7 +12,11 @@ def init_app_options() -> dict:
     db = MotorClient(settings.DB.dsn).default
     debug = settings.ENVIRONMENT == Environment.DEVELOPMENT
 
-    return {'repository': ApplicationRepository(db), 'debug': debug}
+    return {
+        'debug': debug,
+        'repository': ApplicationRepository(db),
+        'configurator': UnitService(),
+    }
 
 
 if __name__ == '__main__':
