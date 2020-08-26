@@ -31,15 +31,15 @@ class UnitService:
         :returns порт, по которому доступно приложение
         """
 
+        inner_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        venv_dir = os.path.join(inner_app_path, 'venv')
+        module = environment_data.get('ENTRYPOINT')
         environment = {f'{self.MODIFIED_AT_ENV}': str(time()), **environment_data}
-
-        unit_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        venv_dir = os.path.join(unit_app_path, 'venv')
 
         app_data = {
             'type': 'python 3',
-            'path': unit_app_path,
-            'module': 'application',
+            'path': inner_app_path,
+            'module': module,
             'home': venv_dir,
             'environment': environment,
         }
@@ -111,16 +111,22 @@ class UnitService:
         request_data = json.dumps(config)
         await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
 
+    async def get_app_environment_data(self, app_uid: str) -> dict:
+        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        response = await self.client.fetch(app_env_url, method='GET')
+        response_data = response.body.decode()
+        return json.loads(response_data)
+
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
     """
     Проверяет zip архив на соответствие условиям. Если хотя бы
-    одно не выполняется, выбрасывает соответствующее исключение.
+    одно не выполняется, выбрасывает соответствующее исключение
 
     :param package: zip файл.
     :param rules: список правил, по которым валидируется архив.
     Каждое правило состоит из функции-предиката (условия выполнения) и исключения,
-    которое вызывается при невыполнении условия.
+    которое вызывается при невыполнении условия
     """
 
     for rule in rules:
@@ -131,30 +137,33 @@ def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
 
 
 def parse_environment_variables(env_file_path: str) -> dict:
-    """
-    Считывает переменные среды приложения и записывает в локальную структуру.
+    """Читает env файл приложения и записывает в локальную структуру
 
-    :param env_file_path: путь до файла с переменными окружения.
-    :return: распарсенные переменные среды.
+    :param env_file_path: путь до файла с переменными окружения
+    :return: распарсенные переменные среды
     """
 
     with open(env_file_path, 'r') as file:
-        variables = [variable_line.split('=') for variable_line in file]
+        variables = [variable_line.strip('\n').split('=') for variable_line in file]
         return {name: value for name, value in variables}
 
 
 def get_app_environment_data(app_uid: str) -> dict:
+    """Считывает переменные среды приложения
+
+    :param app_uid: uid приложения
+    :return: словарь с переменными среды
+    """
+
     app_path = os.path.join(settings.apps_path, app_uid)
     env_path = os.path.join(app_path, ENV_FILE_NAME)
     return parse_environment_variables(env_path)
 
 
 def load_app_requirements(app_dir: str) -> None:
-    """
-    Создаёт окружение в директории приложения и
-    устанавливает зависимости.
+    """Создаёт окружение в директории приложения и устанавливает зависимости
 
-    :param app_dir: путь до приложения.
+    :param app_dir: путь до приложения
     """
 
     venv_dir = path.join(app_dir, 'venv')
@@ -189,7 +198,7 @@ def create_app_directory() -> str:
     Если ни одна попытка не пройдёт, вызовет
     исключение.
 
-    :return: путь до созданной директории приложения.
+    :return: путь до созданной директории приложения
     """
 
     def try_to_create_dir(try_count: int) -> str:
@@ -213,10 +222,10 @@ def create_application_environment(package: 'ZipFile') -> str:
     Точка входа для создания приложения в файловой системе.
     Создаёт директорию приложения со своим окружением,
     куда сохраняет файлы приложения и зависимостей,
-    после чего устанавливает эти зависимости.
+    после чего устанавливает эти зависимости
 
-    :param package: zip архив с файлами приложения и зависимостей.
-    :return: id приложения.
+    :param package: zip архив с файлами приложения и зависимостей
+    :return: id приложения
     """
 
     app_dir = create_app_directory()
@@ -237,10 +246,9 @@ def get_unused_port() -> int:
 
 
 def destroy_application_environment(app_uid: str) -> None:
-    """
-    Удаляет окружение приложения из фс.
+    """Удаляет директорию приложения
 
-    :param app_uid: uid приложения.
+    :param app_uid: uid приложения
     """
 
     app_dirpath = path.join(settings.apps_path, app_uid)
@@ -250,12 +258,11 @@ def destroy_application_environment(app_uid: str) -> None:
 
 
 async def update_application_environment(app_uid: str, package: 'ZipFile') -> None:
-    """
-    Полностью обновляет содержимое приложения,
-    переустанавливает зависимости.
+    """Полностью обновляет содержимое приложения,
+    переустанавливает зависимости
 
-    :param app_uid: uid приложения, содержимое которого нужно обновить.
-    :param package: zip архив с новыми файлами приложения и зависимостей.
+    :param app_uid: uid приложения, содержимое которого нужно обновить
+    :param package: zip архив с новыми файлами приложения и зависимостей
     """
 
     app_dirpath = os.path.join(settings.apps_path, app_uid)

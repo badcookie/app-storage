@@ -35,6 +35,10 @@ class ApplicationInitError(AppStorageException):
     reason = 'Exceeded tries count for app creation: lack of unique ids'
 
 
+class InvalidConfiguration(AppStorageException):
+    reason = 'Invalid environment configuration'
+
+
 def handle_internal_error(func) -> Callable:
     @wraps(func)
     async def wrapper(*args, **kwargs):

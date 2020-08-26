@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from server.errors import (
     EmptyRequiredFileError,
+    InvalidConfiguration,
     InvalidPackageSizeError,
     RequiredFileNotFoundError,
 )
@@ -11,6 +12,8 @@ from server.settings import settings
 if TYPE_CHECKING:
     from zipfile import ZipFile
 
+
+ENTRYPOINT_PATH_VARIABLE_NAME = 'ENTRYPOINT'
 
 ENV_FILE_NAME = '.env'
 REQUIREMENTS_FILE_NAME = 'requirements.txt'
@@ -47,8 +50,22 @@ def required_files_not_empty(package: 'ZipFile') -> bool:
     return len(empty_files) == 0
 
 
+def required_configuration_included(package: 'ZipFile') -> bool:
+    env_data = package.read(ENV_FILE_NAME)
+    decoded_data = env_data.decode()
+
+    lines = [line for line in decoded_data.split('\n') if line]
+    for line in lines:
+        key, value = line.split('=')
+        if key == ENTRYPOINT_PATH_VARIABLE_NAME:
+            return True
+
+    return False
+
+
 VALIDATION_RULES = [
     {'constraint': required_files_included, 'exception': RequiredFileNotFoundError},
     {'constraint': package_size_valid, 'exception': InvalidPackageSizeError},
     {'constraint': required_files_not_empty, 'exception': EmptyRequiredFileError},
+    {'constraint': required_configuration_included, 'exception': InvalidConfiguration},
 ]
