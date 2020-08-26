@@ -89,6 +89,7 @@ class UnitService:
         Сейчас документация предлагает только такой способ
 
         :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
         """
 
         updated_modification_ts = str(time())
