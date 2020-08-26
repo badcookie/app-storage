@@ -19,7 +19,7 @@ from tornado.httpclient import AsyncHTTPClient
 
 class UnitService:
     BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
-    MODIFIED_AT_ENV = 'APPGEN'
+    MODIFIED_AT_ENV_NAME = 'APPGEN'
 
     client = AsyncHTTPClient()
 
@@ -34,7 +34,12 @@ class UnitService:
         inner_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         venv_dir = os.path.join(inner_app_path, 'venv')
         module = environment_data.get('ENTRYPOINT')
-        environment = {f'{self.MODIFIED_AT_ENV}': str(time()), **environment_data}
+
+        app_creation_ts = str(time())
+        environment = {
+            **environment_data,
+            f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
+        }
 
         app_data = {
             'type': 'python 3',
@@ -79,28 +84,22 @@ class UnitService:
 
         log_event('unregistered completely', app_uid)
 
-    async def reload_app(self, app_uid: str) -> None:
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
         """Перезагружает приложение через обновление переменной среды.
         Сейчас документация предлагает только такой способ
 
         :param app_uid: uid приложения
         """
 
-        updated_modification_time = time()
+        updated_modification_ts = str(time())
+        updated_env = {
+            **new_env_data,
+            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
+        }
 
-        app_env_url = (
-            f'{self.BASE_URL}/applications/{app_uid}/environment/{self.MODIFIED_AT_ENV}'
-        )
-
-        res = await self.client.fetch(
-            app_env_url,
-            body=str(updated_modification_time),
-            method='PUT',
-            raise_error=False,
-        )
-        if res.code == 400:
-            print(res.body.decode())
-            raise Exception('shit')
+        request_data = json.dumps(updated_env)
+        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        await self.client.fetch(app_env_url, body=request_data, method='PUT')
 
         log_event('app configuration updated', app_uid)
 

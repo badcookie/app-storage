@@ -79,7 +79,7 @@ async def test_successful_app_lifecycle(
     assert response_data == 'It works'
 
     stored_environment_vars = await configurator.get_app_environment_data(app_uid)
-    stored_environment_vars.pop(configurator.MODIFIED_AT_ENV)
+    old_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
 
     expected_environment_vars = {'ENTRYPOINT': 'application', 'ABC': '5'}
     assert stored_environment_vars == expected_environment_vars
@@ -93,31 +93,38 @@ async def test_successful_app_lifecycle(
 
     detail_url = routes['app_detail'](app_id)
 
-    # update_request_data = prepare_send_file_request('another_valid_app')
-    # assert update_request_data
+    update_request_data = prepare_send_file_request('another_valid_app')
+    assert update_request_data
 
-    # response = await http_client.fetch(
-    #     detail_url,
-    #     method='PUT',
-    #     **update_request_data,
-    #     raise_error=False,
-    #     request_timeout=90,
-    # )
-    # assert response.code == 200
-    # assert path.exists(app_path)
-    #
-    # app_url = f'http://localhost:{app_port}/'
-    # app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
-    # response_data = app_response.body.decode()
-    # assert response_data == 2
-    #
-    # book_id = 5
-    # app_detail_url = f'http://localhost:{app_port}/books/{book_id}/'
-    # app_response = await http_client.fetch(
-    #     app_detail_url, method='DELETE', raise_error=False
-    # )
-    # response_data = app_response.body.decode()
-    # assert response_data == book_id
+    response = await http_client.fetch(
+        detail_url,
+        method='PUT',
+        **update_request_data,
+        raise_error=False,
+        request_timeout=90,
+    )
+    assert response.code == 200
+    assert path.exists(app_path)
+
+    stored_environment_vars = await configurator.get_app_environment_data(app_uid)
+    expected_environment_vars = {'TEST_ENV': '2'}
+    new_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
+
+    assert stored_environment_vars == expected_environment_vars
+    assert new_modification_ts != old_modification_ts
+
+    app_url = f'http://localhost:{app_port}/'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    response_data = app_response.body.decode()
+    assert response_data == expected_environment_vars['TEST_ENV']
+
+    book_id = 5
+    app_detail_url = f'http://localhost:{app_port}/books/{book_id}/'
+    app_response = await http_client.fetch(
+        app_detail_url, method='DELETE', raise_error=False
+    )
+    response_data = app_response.body.decode()
+    assert response_data == str(book_id)
 
     response = await http_client.fetch(detail_url, method='DELETE', raise_error=False)
     assert response.code == 204

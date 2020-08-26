@@ -128,7 +128,11 @@ class ApplicationsHandler(BaseHandler):
         if app_to_update is None:
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
+        app_uid = app_to_update.uid
+
         await update_application_environment(app_to_update.uid, file)
+        enviroment_variables = get_app_environment_data(app_uid)
+        await self.configurator.reload_app(app_uid, enviroment_variables)
 
         self.set_status(200)
 
