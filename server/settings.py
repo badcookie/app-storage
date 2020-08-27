@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     SERVER_PORT: int = 8000
 
     APP_ID_LENGTH: int = 8
-    MAX_PACKAGE_SIZE_MB: int = 5
+    MAX_PACKAGE_SIZE_MB: int = 8
     APP_ID_CREATION_TRIES_COUNT: int = 5
 
     BASE_DIR: str = path.dirname(path.dirname(path.abspath(__file__)))

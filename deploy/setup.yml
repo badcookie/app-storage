@@ -15,6 +15,7 @@
       with_items:
         - ".env"
         - "Dockerfile.server"
+        - "Dockerfile.unit"
         - "docker-compose.yml"
 
     - name: ensure apps path exists
