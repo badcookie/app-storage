@@ -144,7 +144,9 @@ def parse_environment_variables(env_file_path: str) -> dict:
     """
 
     with open(env_file_path, 'r') as file:
-        variables = [variable_line.strip('\n').split('=') for variable_line in file]
+        data = file.read().strip('\n')
+        lines = data.split('\n')
+        variables = [variable_line.split('=') for variable_line in lines]
         return {name: value for name, value in variables}
 
 
