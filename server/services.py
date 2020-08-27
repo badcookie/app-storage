@@ -43,10 +43,11 @@ class UnitService:
 
         app_data = {
             'type': 'python 3',
-            'path': inner_app_path,
+            'path': environment_data.get('PROJECT_ROOT') or inner_app_path,
             'module': module,
             'home': venv_dir,
             'environment': environment,
+            'working_directory': inner_app_path,
         }
         app_url = f'{self.BASE_URL}/applications/{app_uid}/'
 
