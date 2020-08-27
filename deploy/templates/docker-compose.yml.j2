@@ -4,8 +4,10 @@ version: "3.5"
 
 services:
   unit:
+    build:
+      dockerfile: Dockerfile.unit
+      context: .
     container_name: "${PROJECT_NAME}_unit"
-    image: nginx/unit:1.15.0-python3.7
     network_mode: host
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-{{ unit_port }}}"]

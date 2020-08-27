@@ -20,6 +20,7 @@ from tornado.httpclient import AsyncHTTPClient
 class UnitService:
     BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
     MODIFIED_AT_ENV_NAME = 'APPGEN'
+    INITIAL_CONFIG_PATH = os.path.join(settings.BASE_DIR, 'unit_config.json')
 
     client = AsyncHTTPClient()
 
@@ -55,10 +56,29 @@ class UnitService:
 
         log_event('registered app configuration', app_uid)
 
+        static_path = environment_data.get('STATIC_PATH')
+        base_routes = [{'action': {'pass': f'applications/{app_uid}'}}]
+
+        if not static_path:
+            routes = base_routes
+        else:
+            absolute_static_path = os.path.join(inner_app_path, static_path)
+            static_route = {
+                'match': {'uri': '*/static/*'},
+                'action': {'share': absolute_static_path},
+            }
+            routes = [static_route, *base_routes]
+
+        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
+
+        await self.client.fetch(route_url, body=json.dumps(routes), method='PUT')
+
+        log_event('registered app routing', app_uid)
+
         app_port = get_unused_port()
 
         listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        listener_data = {'pass': f'applications/{app_uid}'}
+        listener_data = {'pass': f'routes/{app_uid}'}
 
         await self.client.fetch(
             listener_url, body=json.dumps(listener_data), method='PUT'
@@ -79,6 +99,11 @@ class UnitService:
         await self.client.fetch(listener_url, method='DELETE')
 
         log_event('unregistered listener on port %s', app_uid, app_port)
+
+        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
+        await self.client.fetch(route_url, method='DELETE')
+
+        log_event('unregistered route', app_uid)
 
         app_url = f'{self.BASE_URL}/applications/{app_uid}/'
         await self.client.fetch(app_url, method='DELETE')
@@ -108,9 +133,9 @@ class UnitService:
     async def reset_configuration(self) -> None:
         """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
 
-        config = {'applications': {}, 'listeners': {}}
-        request_data = json.dumps(config)
-        await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
+        with open(self.INITIAL_CONFIG_PATH) as config:
+            request_data = config.read().strip('\n')
+            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
 
     async def get_app_environment_data(self, app_uid: str) -> dict:
         app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
