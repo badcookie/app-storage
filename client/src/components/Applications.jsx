@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useEffect } from "react";
+import { ListGroup, Card, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../slices";
@@ -16,19 +17,36 @@ const handleAppRemove = (appId, removeApp) => () => {
 
 const handleAppUpdate = appId => () => {};
 
-const fetchApps = storeAppsCallback => () => {
+const fetchApps = addApps => () => {
   const url = `http://${document.location.hostname}:8000/applications/`;
   axios
     .get(url)
     .then(response => {
       const apps = response.data;
-      console.log(apps);
-      storeAppsCallback(apps);
+      addApps(apps);
     })
     .catch(console.log);
 };
 
 const getApps = state => state.apps;
+
+const renderApps = (apps, removeApp) => {
+  if (apps.length === 0) {
+    return <Card body>No apps yet.</Card>;
+  }
+
+  return (
+    <ListGroup variant="flush">
+      {apps.map(app => (
+        <ListGroup.Item key={app.id}>
+          {app.uid} {app.port}
+          <button onClick={handleAppRemove(app.id, removeApp)}>remove</button>
+          <button onClick={handleAppUpdate(app.id)}>update</button>
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+  );
+};
 
 const Applications = () => {
   const dispatch = useDispatch();
@@ -40,23 +58,21 @@ const Applications = () => {
 
   const apps = useSelector(getApps);
 
-  if (apps.length === 0) {
-    return <p>No apps yet</p>;
-  }
-
-  const appsList = (
-    <ul>
-      {apps.map(app => (
-        <li key={app.id}>
-          {app.uid} {app.port}
-          <button onClick={handleAppRemove(app.id, removeApp)}>remove</button>
-          <button onClick={handleAppUpdate(app.id)}>update</button>
-        </li>
-      ))}
-    </ul>
+  const breadcrumbs = (
+    <div className="d-flex">
+      <span className="pl-2 lead text-bottom">Applications</span>
+      <Button variant="secondary" className="ml-auto">
+        +
+      </Button>
+    </div>
   );
 
-  return <div>{appsList}</div>;
+  return (
+    <>
+      {breadcrumbs}
+      <div className="mt-2">{renderApps(apps, removeApp)}</div>
+    </>
+  );
 };
 
 export default Applications;

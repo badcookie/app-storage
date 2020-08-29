@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Container, Row, Col } from "react-bootstrap";
 
 import getModal from "./modals";
+// import Form from './Form';
 import Applications from "./Applications";
 
 const renderModal = modalInfo => {
@@ -20,12 +21,13 @@ const App = () => {
   const modalInfo = useSelector(getModalInfo);
   return (
     <>
-      <Container className="h-100">
+      <Container className="h-100 mt-5">
         <Row>
           <Col>
             <Applications />
           </Col>
         </Row>
+        {/*<Form />*/}
       </Container>
       {renderModal(modalInfo)}
     </>
