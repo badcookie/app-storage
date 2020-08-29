@@ -21,7 +21,11 @@ from server.services import (
     validate_package,
 )
 from server.settings import settings
-from server.validation import VALIDATION_RULES
+from server.validation import (
+    APP_DESCRIPTION_VARIABLE_NAME,
+    APP_NAME_VARIABLE_NAME,
+    VALIDATION_RULES,
+)
 from tornado import web
 from tornado.httputil import HTTPServerRequest
 
@@ -106,7 +110,12 @@ class ApplicationsHandler(BaseHandler):
         enviroment_variables = get_app_environment_data(app_uid)
         app_port = await self.configurator.register_app(app_uid, enviroment_variables)
 
-        app = Application(uid=app_uid, port=app_port)
+        app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
+        app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
+
+        app = Application(
+            uid=app_uid, port=app_port, name=app_name, description=app_description
+        )
         app_id = await self.repository.add(app)
 
         app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
