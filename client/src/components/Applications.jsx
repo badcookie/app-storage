@@ -31,9 +31,17 @@ const renderApps = (apps, appManagementTools) => {
         <ListGroup.Item key={app.id} className="d-flex">
           {app.uid} {app.port}
           <Button
+            variant="success"
+            href={`http://${document.location.hostname}:${app.port}`}
+            target="_blank"
+            className="ml-auto mr-1"
+          >
+            Visit
+          </Button>
+          <Button
             variant="primary"
             onClick={handleUpdate(app)}
-            className="ml-auto mr-1"
+            className="mr-1"
           >
             Update
           </Button>
