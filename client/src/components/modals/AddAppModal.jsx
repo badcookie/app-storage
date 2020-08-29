@@ -30,20 +30,14 @@ const AddAppModal = () => {
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
 
   return (
-    <Modal.Dialog onHide={hideModal}>
+    <Modal show onHide={hideModal} centered>
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Load application</Modal.Title>
       </Modal.Header>
-
       <Modal.Body>
         <FileUploadForm handleSumbit={handleSumbit(addApp)} />
       </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="secondary">Close</Button>
-        <Button variant="primary">Save changes</Button>
-      </Modal.Footer>
-    </Modal.Dialog>
+    </Modal>
   );
 };
 

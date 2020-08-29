@@ -40,9 +40,13 @@ const renderApps = (apps, appManagementTools) => {
   return (
     <ListGroup variant="flush">
       {apps.map(app => (
-        <ListGroup.Item key={app.id}>
+        <ListGroup.Item key={app.id} className="d-flex">
           {app.uid} {app.port}
-          <Button variant="primary" onClick={handleUpdate(app)}>
+          <Button
+            variant="primary"
+            onClick={handleUpdate(app)}
+            className="ml-auto mr-1"
+          >
             Update
           </Button>
           <Button variant="danger" onClick={handleRemove(app)}>
@@ -54,16 +58,15 @@ const renderApps = (apps, appManagementTools) => {
   );
 };
 
-const handleAppAdd = setModalInfo => setModalInfo({ type: "add" });
-
 const Applications = () => {
   const dispatch = useDispatch();
   const addApps = apps => dispatch(actions.apps.addApps(apps));
   const setModalInfo = info => dispatch(actions.modalInfo.setModalInfo(info));
+  const handleAppAdd = () => setModalInfo({ type: "add" });
 
   const appManagementTools = {
-    handleRemove: app => setModalInfo({ type: "remove", app }),
-    handleUpdate: app => setModalInfo({ type: "update", app })
+    handleRemove: app => () => setModalInfo({ type: "remove", app }),
+    handleUpdate: app => () => setModalInfo({ type: "update", app })
   };
 
   useEffect(fetchApps(addApps), []);
@@ -74,11 +77,7 @@ const Applications = () => {
     <>
       <div className="d-flex">
         <span className="pl-2 lead text-bottom">Applications</span>
-        <Button
-          variant="secondary"
-          className="ml-auto"
-          onClick={handleAppAdd(setModalInfo)}
-        >
+        <Button variant="secondary" className="ml-auto" onClick={handleAppAdd}>
           +
         </Button>
       </div>
