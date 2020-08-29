@@ -143,7 +143,14 @@ class ApplicationsHandler(BaseHandler):
         enviroment_variables = get_app_environment_data(app_uid)
         await self.configurator.reload_app(app_uid, enviroment_variables)
 
+        data_to_update = {
+            'name': enviroment_variables.get(APP_NAME_VARIABLE_NAME),
+            'description': enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME),
+        }
+        updated_app = await self.repository.update(app_id, data_to_update)
+
         self.set_status(200)
+        self.write(updated_app.dict())
 
     @handle_internal_error
     async def delete(self, app_id: str = None):

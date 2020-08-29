@@ -48,6 +48,12 @@ class NoSQLRepository(Repository):
     async def delete(self, **params) -> None:
         await self._db[self.collection].delete_one(params)
 
+    async def update(self, entity_id: str, data: dict) -> 'Entity':
+        search_query = {'id': entity_id}
+        update_query = {'$set': data}
+        await self._db[self.collection].find_one_and_update(search_query, update_query)
+        return await self.get(**search_query)
+
 
 class ApplicationRepository(NoSQLRepository):
     model = ApplicationReadOnly

@@ -4,6 +4,7 @@ from os import path
 import pytest
 from requests import Request
 from server.settings import settings
+from server.validation import APP_DESCRIPTION_VARIABLE_NAME, APP_NAME_VARIABLE_NAME
 
 TESTS_DIR = path.dirname(__file__)
 FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
@@ -106,8 +107,20 @@ async def test_successful_app_lifecycle(
     assert response.code == 200
     assert path.exists(app_path)
 
+    updated_data = json.loads(response.body.decode())
+    updated_app = await repo.get(id=app_id)
+
+    print(await repo.list())
+
+    assert updated_app.name == updated_data['name']
+    assert updated_app.description == updated_data['description']
+
     stored_environment_vars = await configurator.get_app_environment_data(app_uid)
-    expected_environment_vars = {'TEST_ENV': '2'}
+    expected_environment_vars = {
+        'TEST_ENV': '2',
+        f'{APP_NAME_VARIABLE_NAME}': updated_app.name,
+        f'{APP_DESCRIPTION_VARIABLE_NAME}': updated_app.description,
+    }
     new_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
 
     assert stored_environment_vars == expected_environment_vars
