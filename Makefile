@@ -21,7 +21,7 @@ server:
 
 client:
 	@cd client
-	@npm run start
+	@yarn start
 
 
 .PHONY: client server
