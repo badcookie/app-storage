@@ -24,6 +24,9 @@ async def test_application_repository(repository):
     assert first_instance.port == first_in_memory_instance.port
     assert first_instance.uid == first_in_memory_instance.uid
 
+    assert first_instance.name is None
+    assert first_instance.description is None
+
     non_existing_instance = await repository.get(id=-1)
     assert non_existing_instance is None
 
@@ -32,6 +35,12 @@ async def test_application_repository(repository):
 
     found_instance = await repository.get(port=23976)
     assert found_instance.id == first_instance_id
+
+    data_to_update = {'name': 'Bob', 'description': 'Nice app'}
+    updated_instance = await repository.update(first_instance_id, data_to_update)
+
+    assert updated_instance.name == data_to_update['name']
+    assert updated_instance.description == data_to_update['description']
 
     await repository.delete(id=first_instance_id)
 

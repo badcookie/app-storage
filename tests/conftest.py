@@ -91,6 +91,15 @@ class TestRepository(Repository):
     async def delete(self, **params) -> None:
         self._db = [item for item in self._db if not params.items() <= item.items()]
 
+    async def update(self, entity_id: str, data_to_update: dict) -> 'Entity':
+        def _replace_with_updated(item: dict) -> dict:
+            if item['id'] == entity_id:
+                return {**item, **data_to_update}
+            return item
+
+        self._db = [_replace_with_updated(item) for item in self._db]
+        return await self.get(id=entity_id)
+
 
 def init_app_options():
     db = []
