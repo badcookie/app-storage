@@ -18,40 +18,49 @@ const fetchApps = addApps => () => {
 
 const getApps = ({ apps }) => apps;
 
-const renderApps = (apps, appManagementTools) => {
-  const { handleRemove, handleUpdate } = appManagementTools;
+const renderSingleApp = props => app => {
+  const appName = app.name || app.uid;
+  const appDescription = app.description || "No description";
 
+  return (
+    <Card key={app.id} className="mb-2">
+      <Card.Header className="d-flex">
+        <span className="d-inline-flex align-items-center">{appName}</span>
+        <Button
+          variant="success"
+          href={`http://${document.location.hostname}:${app.port}`}
+          target="_blank"
+          className="ml-auto mr-1"
+        >
+          Visit
+        </Button>
+        <Button
+          variant="primary"
+          onClick={props.handleUpdate(app)}
+          className="mr-1"
+        >
+          Update
+        </Button>
+        <Button variant="danger" onClick={props.handleRemove(app)}>
+          Remove
+        </Button>
+      </Card.Header>
+      <Card.Body>
+        <Card.Text>
+          <span className="text-muted">{appDescription}</span>
+        </Card.Text>
+      </Card.Body>
+    </Card>
+  );
+};
+
+const renderApps = (apps, appManagementTools) => {
   if (apps.length === 0) {
     return <Card body>No apps yet.</Card>;
   }
 
-  return (
-    <ListGroup variant="flush">
-      {apps.map(app => (
-        <ListGroup.Item key={app.id} className="d-flex">
-          {app.uid} {app.port}
-          <Button
-            variant="success"
-            href={`http://${document.location.hostname}:${app.port}`}
-            target="_blank"
-            className="ml-auto mr-1"
-          >
-            Visit
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleUpdate(app)}
-            className="mr-1"
-          >
-            Update
-          </Button>
-          <Button variant="danger" onClick={handleRemove(app)}>
-            Remove
-          </Button>
-        </ListGroup.Item>
-      ))}
-    </ListGroup>
-  );
+  const renderApp = renderSingleApp(appManagementTools);
+  return <div>{apps.map(renderApp)}</div>;
 };
 
 const Applications = () => {
