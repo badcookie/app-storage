@@ -117,8 +117,8 @@ class ApplicationsHandler(BaseHandler):
             uid=app_uid, port=app_port, name=app_name, description=app_description
         )
         app_id = await self.repository.add(app)
+        app_data = {'id': app_id, **app.dict()}
 
-        app_data = {'id': app_id, 'port': app_port, 'uid': app_uid}
         self.set_status(201)
         self.write(app_data)
 
