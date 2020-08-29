@@ -1,9 +1,10 @@
 import AddAppModal from "./AddAppModal";
+import RemoveAppModal from "./RemoveAppModal";
 import UpdateAppModal from "./UpdateAppModal";
 
 const typeModalMap = {
   add: AddAppModal,
-  remove: "",
+  remove: RemoveAppModal,
   update: UpdateAppModal
 };
 

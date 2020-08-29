@@ -5,18 +5,6 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../slices";
 
-const handleAppRemove = (appId, removeApp) => () => {
-  const url = `http://${document.location.hostname}:8000/applications/${appId}/`;
-  axios
-    .delete(url)
-    .then(response => {
-      removeApp(appId);
-    })
-    .catch(console.log);
-};
-
-const handleAppUpdate = appId => () => {};
-
 const fetchApps = addApps => () => {
   const url = `http://${document.location.hostname}:8000/applications/`;
   axios
@@ -28,7 +16,7 @@ const fetchApps = addApps => () => {
     .catch(console.log);
 };
 
-const getApps = state => state.apps;
+const getApps = ({ apps }) => apps;
 
 const renderApps = (apps, appManagementTools) => {
   const { handleRemove, handleUpdate } = appManagementTools;
@@ -62,6 +50,7 @@ const Applications = () => {
   const dispatch = useDispatch();
   const addApps = apps => dispatch(actions.apps.addApps(apps));
   const setModalInfo = info => dispatch(actions.modalInfo.setModalInfo(info));
+
   const handleAppAdd = () => setModalInfo({ type: "add" });
 
   const appManagementTools = {
@@ -81,7 +70,7 @@ const Applications = () => {
           +
         </Button>
       </div>
-      <div className="mt-2">{renderApps(apps, appManagementTools)}</div>
+      <div className="mt-4">{renderApps(apps, appManagementTools)}</div>
     </>
   );
 };

@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { actions } from "../../slices";
 import FileUploadForm from "../FileUploadForm";
 
-const handleSumbit = appId => async event => {
+const handleSumbit = ({ appId, hideModal }) => async event => {
   event.preventDefault();
 
   const formData = new FormData(event.target);
@@ -19,6 +19,8 @@ const handleSumbit = appId => async event => {
   } catch (e) {
     console.log(e);
   }
+
+  hideModal();
 };
 
 const getModalInfo = ({ modalInfo }) => modalInfo;
@@ -28,22 +30,18 @@ const UpdateAppModal = () => {
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
 
   const { app } = useSelector(getModalInfo);
+  const sumbitProps = { appId: app.id, hideModal };
 
   return (
-    <Modal.Dialog onHide={hideModal}>
+    <Modal show onHide={hideModal}>
       <Modal.Header closeButton onHide={hideModal}>
-        <Modal.Title>Load application</Modal.Title>
+        <Modal.Title>Update application</Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
-        <FileUploadForm handleSumbit={handleSumbit(app.id)} />
+        <FileUploadForm handleSumbit={handleSumbit(sumbitProps)} />
       </Modal.Body>
-
-      <Modal.Footer>
-        <Button variant="secondary">Close</Button>
-        <Button variant="primary">Save changes</Button>
-      </Modal.Footer>
-    </Modal.Dialog>
+    </Modal>
   );
 };
 
