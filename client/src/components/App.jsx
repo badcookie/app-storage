@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { Container, Row, Col } from "react-bootstrap";
 
 import getModal from "./modals";
-// import Form from './Form';
 import Applications from "./Applications";
 
 const renderModal = modalInfo => {
@@ -27,7 +26,6 @@ const App = () => {
             <Applications />
           </Col>
         </Row>
-        {/*<Form />*/}
       </Container>
       {renderModal(modalInfo)}
     </>

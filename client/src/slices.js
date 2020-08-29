@@ -19,9 +19,10 @@ const appSlice = createSlice({
 
 const modalInfoSlice = createSlice({
   name: "modalInfo",
-  initialState: { type: null, item: null },
+  initialState: { type: null, app: null },
   reducers: {
-    setModalInfo: (state, action) => action.payload
+    setModalInfo: (state, action) => action.payload,
+    hideModal: () => ({ type: null, app: null })
   }
 });
 

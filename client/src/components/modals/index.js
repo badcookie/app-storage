@@ -1,7 +1,10 @@
+import AddAppModal from "./AddAppModal";
+import UpdateAppModal from "./UpdateAppModal";
+
 const typeModalMap = {
-  add: "",
+  add: AddAppModal,
   remove: "",
-  update: ""
+  update: UpdateAppModal
 };
 
 const getModal = actionType => typeModalMap[actionType];

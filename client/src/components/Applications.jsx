@@ -30,7 +30,9 @@ const fetchApps = addApps => () => {
 
 const getApps = state => state.apps;
 
-const renderApps = (apps, removeApp) => {
+const renderApps = (apps, appManagementTools) => {
+  const { handleRemove, handleUpdate } = appManagementTools;
+
   if (apps.length === 0) {
     return <Card body>No apps yet.</Card>;
   }
@@ -40,37 +42,47 @@ const renderApps = (apps, removeApp) => {
       {apps.map(app => (
         <ListGroup.Item key={app.id}>
           {app.uid} {app.port}
-          <button onClick={handleAppRemove(app.id, removeApp)}>remove</button>
-          <button onClick={handleAppUpdate(app.id)}>update</button>
+          <Button variant="primary" onClick={handleUpdate(app)}>
+            Update
+          </Button>
+          <Button variant="danger" onClick={handleRemove(app)}>
+            Remove
+          </Button>
         </ListGroup.Item>
       ))}
     </ListGroup>
   );
 };
 
+const handleAppAdd = setModalInfo => setModalInfo({ type: "add" });
+
 const Applications = () => {
   const dispatch = useDispatch();
-
   const addApps = apps => dispatch(actions.apps.addApps(apps));
-  const removeApp = appId => dispatch(actions.apps.removeApp(appId));
+  const setModalInfo = info => dispatch(actions.modalInfo.setModalInfo(info));
+
+  const appManagementTools = {
+    handleRemove: app => setModalInfo({ type: "remove", app }),
+    handleUpdate: app => setModalInfo({ type: "update", app })
+  };
 
   useEffect(fetchApps(addApps), []);
 
   const apps = useSelector(getApps);
 
-  const breadcrumbs = (
-    <div className="d-flex">
-      <span className="pl-2 lead text-bottom">Applications</span>
-      <Button variant="secondary" className="ml-auto">
-        +
-      </Button>
-    </div>
-  );
-
   return (
     <>
-      {breadcrumbs}
-      <div className="mt-2">{renderApps(apps, removeApp)}</div>
+      <div className="d-flex">
+        <span className="pl-2 lead text-bottom">Applications</span>
+        <Button
+          variant="secondary"
+          className="ml-auto"
+          onClick={handleAppAdd(setModalInfo)}
+        >
+          +
+        </Button>
+      </div>
+      <div className="mt-2">{renderApps(apps, appManagementTools)}</div>
     </>
   );
 };
