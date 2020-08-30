@@ -1,5 +1,5 @@
 environment: "production"
-project_path: "/root/app_storage"
+project_path: "/home/app_storage"
 
 db_host: db
 db_port: 27017
