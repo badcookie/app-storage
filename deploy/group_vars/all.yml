@@ -1,2 +1,3 @@
 project_name: app_storage
+project_repo: https://gitlab.osinit.com/osinit/web/employee-development/novokreschenova
 mounted_apps_path: /apps/
