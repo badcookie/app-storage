@@ -1,9 +1,30 @@
 stages:
+  - build
   - deploy
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+.build:
+  stage: build
+  tags: [build]
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/$SERVICE:latest Dockerfile.$SERVICE
+    - docker push $CI_REGISTRY_IMAGE/$SERVICE:latest
+
+build unit:
+  extends: .build
+  variables:
+    SERVICE: unit
+
+build server:
+  extends: .build
+  variables:
+    SERVICE: server
 
 deploy:
   stage: deploy
   tags: [deploy]
   script:
     - cd deploy
-    - ansible-playbook -i hosts --limit remote setup.yml
+    - ansible-playbook -i hosts --limit remote setup.yml -e registry=$CI_REGISTRY -e token=$CI_BUILD_TOKEN

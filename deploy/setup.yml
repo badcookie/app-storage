@@ -5,13 +5,6 @@
     templates_path: "./templates"
 
   tasks:
-    - name: clone repo
-      git:
-        repo: "{{ project_repo }}"
-        dest: "{{ project_path }}"
-        version: app-storage/deploy
-      when: environment != 'development'
-
     - name: ensure apps path exists
       file:
         path: "{{ apps_path }}"
@@ -25,9 +18,16 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
-        - "Dockerfile.server"
-        - "Dockerfile.unit"
         - "docker-compose.yml"
+
+    - name: log in to registry
+      shell: echo {{ token }} | docker login -u gitlab-ci-token {{ registry }} --password-stdin
+      when: environment != 'development'
+
+    - name: pull changes
+      shell: docker-compose pull
+      args:
+        chdir: "{{ project_path }}"
 
     - name: run base services
       shell: docker-compose up -d db unit
