@@ -5,13 +5,6 @@
     templates_path: "./templates"
 
   tasks:
-    - name: clone repo
-      git:
-        repo: "{{ project_repo }}"
-        dest: "{{ project_path }}"
-        version: app-storage/deploy
-      when: environment != 'development'
-
     - name: ensure apps path exists
       file:
         path: "{{ apps_path }}"
