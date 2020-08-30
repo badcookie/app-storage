@@ -3,9 +3,13 @@
 
   vars:
     templates_path: "./templates"
-    services_to_run: "{{ 'unit db' if ansible_host is 'localhost' else 'unit db server' }}"
 
   tasks:
+    - name: ensure project path exists
+      file:
+        path: "{{ project_path }}"
+        state: directory
+
     - name: setup env files
       template:
         src: "{{ templates_path }}/{{ item }}.j2"
@@ -16,6 +20,7 @@
         - ".env"
         - "Dockerfile.server"
         - "Dockerfile.unit"
+        - "Dockerfile.ui"
         - "docker-compose.yml"
 
     - name: ensure apps path exists
@@ -29,7 +34,7 @@
         chdir: "{{ project_path }}"
 
     - name: run server
-      shell: docker-compose up -d server
+      shell: docker-compose up -d server ui
       args:
         chdir: "{{ project_path }}"
-      when: ansible_host != 'localhost'
+      when: environment != 'development'

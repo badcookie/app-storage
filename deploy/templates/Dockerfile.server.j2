@@ -6,10 +6,10 @@ RUN mkdir {{ mounted_apps_path }}
 RUN mkdir /app_storage
 
 WORKDIR /app_storage
-COPY poetry.lock pyproject.toml /app_storage/
+COPY poetry.lock pyproject.toml .
 
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
-COPY . /app_storage
+COPY server /app_storage/server/
 
 CMD ["python3", "server/app.py"]

@@ -7,18 +7,19 @@ services:
     build:
       dockerfile: Dockerfile.unit
       context: .
+    image: "${PROJECT_NAME}:unit"
     container_name: "${PROJECT_NAME}_unit"
     network_mode: host
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-{{ unit_port }}}"]
     volumes:
-      - {% if develop -%} ${APPS_PATH} {%- else -%} apps_data {%- endif -%}:${MOUNTED_APPS_PATH}
+      - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
   db:
     image: mongo
     container_name: "${PROJECT_NAME}_db"
     volumes:
-      - db_data:/data/db
+      - db:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -26,18 +27,31 @@ services:
       - "${DB_PORT:-{{ db_port }}}:27017"
 
   server:
-    container_name: "${PROJECT_NAME}_server"
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
     image: "${PROJECT_NAME}:server"
+    container_name: "${PROJECT_NAME}_server"
     ports:
       - "${SERVER_PORT:-{{ server_port }}}:${SERVER_PORT:-{{ server_port }}}"
     volumes:
-      - {% if develop -%} ${APPS_PATH} {%- else -%} apps_data {%- endif -%}:${MOUNTED_APPS_PATH}
+      - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    image: "${PROJECT_NAME}:ui"
+    container_name: "${PROJECT_NAME}_server"
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - static:{{ client_static_path }}
 
 
 volumes:
-  db_data: {}{% if not develop %}
-    apps_data: {}
+  db: {}
+  static: {}{% if not develop %}
+    apps: {}
   {% endif %}

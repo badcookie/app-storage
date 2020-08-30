@@ -3,3 +3,6 @@ localhost ansible_connection=local
 
 [local]
 localhost
+
+[remote]
+localhost

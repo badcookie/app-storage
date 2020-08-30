@@ -1,0 +1,8 @@
+stages:
+  - deploy
+
+build_and_deploy:
+  stage: deploy
+  tags: [production]
+  script:
+    - pwd
