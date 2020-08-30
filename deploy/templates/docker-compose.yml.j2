@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile.unit
       context: .
     image: "${PROJECT_NAME}:unit"
-    container_name: "${PROJECT_NAME}-unit"
+    container_name: "${PROJECT_NAME}_unit"
     network_mode: host
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-{{ unit_port }}}"]
@@ -17,7 +17,7 @@ services:
 
   db:
     image: mongo
-    container_name: "${PROJECT_NAME}-db"
+    container_name: "${PROJECT_NAME}_db"
     volumes:
       - db:/data/db
     environment:
@@ -31,7 +31,7 @@ services:
       context: .
       dockerfile: Dockerfile.server
     image: "${PROJECT_NAME}:server"
-    container_name: "${PROJECT_NAME}-server"
+    container_name: "${PROJECT_NAME}_server"
     ports:
       - "${SERVER_PORT:-{{ server_port }}}:${SERVER_PORT:-{{ server_port }}}"
     volumes:
@@ -42,7 +42,7 @@ services:
       context: .
       dockerfile: Dockerfile.ui
     image: "${PROJECT_NAME}:ui"
-    container_name: "${PROJECT_NAME}-ui"
+    container_name: "${PROJECT_NAME}_server"
     ports:
       - 80:80
       - 443:443
