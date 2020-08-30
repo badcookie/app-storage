@@ -9,6 +9,7 @@
       file:
         path: "{{ project_path }}"
         state: directory
+      become: yes
 
     - name: setup env files
       template:
@@ -27,6 +28,7 @@
       file:
         path: "{{ apps_path }}"
         state: directory
+      become: yes
 #    - name: run base services
 #      shell: docker-compose up -d db unit
 #      args:
