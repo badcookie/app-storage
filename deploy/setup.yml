@@ -20,21 +20,20 @@
         - ".env"
         - "Dockerfile.server"
         - "Dockerfile.unit"
-        - "Dockerfile.ui"
+        #        - "Dockerfile.ui"
         - "docker-compose.yml"
 
     - name: ensure apps path exists
       file:
         path: "{{ apps_path }}"
         state: directory
-
-    - name: run base services
-      shell: docker-compose up -d db unit
-      args:
-        chdir: "{{ project_path }}"
-
-    - name: run server
-      shell: docker-compose up -d server ui
-      args:
-        chdir: "{{ project_path }}"
-      when: environment != 'development'
+#    - name: run base services
+#      shell: docker-compose up -d db unit
+#      args:
+#        chdir: "{{ project_path }}"
+#
+#    - name: run server
+#      shell: docker-compose up -d server ui
+#      args:
+#        chdir: "{{ project_path }}"
+#      when: environment != 'development'

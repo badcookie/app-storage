@@ -5,4 +5,5 @@ build_and_deploy:
   stage: deploy
   tags: [production]
   script:
-    - pwd
+    - cd deploy
+    - ansible-playbook -i hosts --limit remote -e environment=production setup.yml
