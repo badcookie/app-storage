@@ -5,11 +5,16 @@
     templates_path: "./templates"
 
   tasks:
-    - name: ensure project path exists
+    - name: copy project contents
+      copy:
+        src: "{{ inventory_dir }}/.."
+        dest: "{{ project_path }}"
+      when: environment != 'development'
+
+    - name: ensure apps path exists
       file:
-        path: "{{ project_path }}"
+        path: "{{ apps_path }}"
         state: directory
-      become: yes
 
     - name: setup env files
       template:
@@ -21,21 +26,15 @@
         - ".env"
         - "Dockerfile.server"
         - "Dockerfile.unit"
-        #        - "Dockerfile.ui"
         - "docker-compose.yml"
 
-    - name: ensure apps path exists
-      file:
-        path: "{{ apps_path }}"
-        state: directory
-      become: yes
-#    - name: run base services
-#      shell: docker-compose up -d db unit
-#      args:
-#        chdir: "{{ project_path }}"
-#
-#    - name: run server
-#      shell: docker-compose up -d server ui
-#      args:
-#        chdir: "{{ project_path }}"
-#      when: environment != 'development'
+    - name: run base services
+      shell: docker-compose up -d db unit
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: run server
+      shell: docker-compose up -d server
+      args:
+        chdir: "{{ project_path }}"
+      when: environment != 'development'
