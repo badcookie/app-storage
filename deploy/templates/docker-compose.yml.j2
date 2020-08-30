@@ -4,10 +4,7 @@ version: "3.5"
 
 services:
   unit:
-    build:
-      dockerfile: Dockerfile.unit
-      context: .
-    image: "${PROJECT_NAME}:unit"
+    image: "{{ registry }}/unit"
     container_name: "${PROJECT_NAME}_unit"
     network_mode: host
     command:
@@ -27,27 +24,21 @@ services:
       - "${DB_PORT:-{{ db_port }}}:27017"
 
   server:
-    build:
-      context: .
-      dockerfile: Dockerfile.server
-    image: "${PROJECT_NAME}:server"
+    image: "{{ registry }}/server"
     container_name: "${PROJECT_NAME}_server"
     ports:
       - "${SERVER_PORT:-{{ server_port }}}:${SERVER_PORT:-{{ server_port }}}"
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
-  ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.ui
-    image: "${PROJECT_NAME}:ui"
-    container_name: "${PROJECT_NAME}_server"
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - static:/build/
+{#  ui:#}
+{#    image: "${PROJECT_NAME}:ui"#}
+{#    container_name: "${PROJECT_NAME}_server"#}
+{#    ports:#}
+{#      - 80:80#}
+{#      - 443:443#}
+{#    volumes:#}
+{#      - static:/build/#}
 
 
 volumes:
