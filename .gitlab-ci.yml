@@ -6,6 +6,7 @@ before_script:
   - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
 .build:
+  when: manual
   stage: build
   tags: [build]
   script:
@@ -25,6 +26,7 @@ build server:
 deploy:
   stage: deploy
   tags: [deploy]
+  when: manual
   script:
     - cd deploy
     - ansible-playbook -i hosts --limit remote setup.yml -e registry=$CI_REGISTRY -e token=$CI_BUILD_TOKEN
