@@ -6,4 +6,4 @@ build_and_deploy:
   tags: [production]
   script:
     - cd deploy
-    - ansible-playbook -i hosts --limit remote -e environment=production setup.yml
+    - ansible-playbook -i hosts --limit remote setup.yml
