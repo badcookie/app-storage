@@ -1,5 +1,5 @@
 env: "production"
-project_path: "."
+project_path: "{{ inventory_dir }}/.."
 
 db_host: db
 db_port: 27017
