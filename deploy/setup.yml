@@ -18,6 +18,10 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
+        - "nginx_config"
+        - "server.Dockerfile"
+        - "unit.Dockerfile"
+        - "ui.Dockerfile"
         - "docker-compose.yml"
 
     - name: run base services
@@ -29,4 +33,4 @@
       shell: docker-compose up -d server
       args:
         chdir: "{{ project_path }}"
-      when: environment != 'development'
+      when: env != 'development'

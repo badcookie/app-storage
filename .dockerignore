@@ -8,10 +8,4 @@ deploy
 venv
 temp
 .env
-
-.gitignore
-.pre-commit-config.yaml
-.gitlab-ci.yml
-
-Dockerfile.server
-docker-compose.yml
+node_modules
