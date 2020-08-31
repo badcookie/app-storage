@@ -7,7 +7,7 @@ RUN mkdir /app_storage
 RUN mkdir /app_storage/client/
 
 WORKDIR /app_storage
-COPY poetry.lock pyproject.toml .
+COPY poetry.lock pyproject.toml ./
 
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 

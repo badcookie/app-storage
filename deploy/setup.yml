@@ -20,15 +20,6 @@
         - ".env"
         - "docker-compose.yml"
 
-    - name: log in to registry
-      shell: echo {{ token }} | docker login -u gitlab-ci-token {{ registry }} --password-stdin
-      when: environment != 'development'
-
-    - name: pull changes
-      shell: docker-compose pull
-      args:
-        chdir: "{{ project_path }}"
-
     - name: run base services
       shell: docker-compose up -d db unit
       args:
