@@ -10,7 +10,7 @@ const handleSumbit = ({ appId, hideModal }) => async event => {
   event.preventDefault();
 
   const formData = new FormData(event.target);
-  const url = `http://${document.location.hostname}:8000/applications/${appId}/`;
+  const url = `http://${document.location.hostname}/applications/${appId}/`;
 
   try {
     await axios.put(url, formData, {

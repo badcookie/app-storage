@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { actions } from "../../slices";
 
 const handleSubmit = ({ appId, removeApp, hideModal }) => async () => {
-  const url = `http://${document.location.hostname}:8000/applications/${appId}/`;
+  const url = `http://${document.location.hostname}/applications/${appId}/`;
   await axios
     .delete(url)
     .then(response => {

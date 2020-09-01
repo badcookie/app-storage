@@ -11,7 +11,7 @@ const handleSumbit = ({ addApp, hideModal }) => async event => {
 
   const formData = new FormData(event.target);
 
-  const url = `http://${document.location.hostname}:8000/applications/`;
+  const url = `http://${document.location.hostname}/applications/`;
 
   try {
     const response = await axios.post(url, formData, {
