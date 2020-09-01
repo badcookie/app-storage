@@ -1,6 +1,9 @@
 server {
     listen 80;
-    root {{ static_path }};
+
+    location = / {
+        root {{ static_path }};
+    }
 
     location /applications/ {
         proxy_pass http://server:{{ server_port }}/applications/;
