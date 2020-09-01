@@ -16,6 +16,7 @@
         dest: "{{ project_path }}/{{ item }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
+        mode: +rwx
       with_items:
         - ".env"
         - "nginx_config"
