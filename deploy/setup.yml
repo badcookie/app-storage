@@ -31,7 +31,7 @@
         chdir: "{{ project_path }}"
 
     - name: run server
-      shell: docker-compose up -d server
+      shell: docker-compose up -d server ui
       args:
         chdir: "{{ project_path }}"
       when: env != 'development'
