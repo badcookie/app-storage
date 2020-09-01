@@ -31,7 +31,7 @@
         chdir: "{{ project_path }}"
 
     - name: run client and server
-      shell: docker-compose up -d --build server ui
+      shell: docker-compose up -d --force-recreate server ui
       args:
         chdir: "{{ project_path }}"
       when: env != 'development'
