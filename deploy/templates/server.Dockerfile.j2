@@ -12,3 +12,5 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 
 COPY server /{{ project_name }}/server/
 ENV PYTHONPATH "${PYTHONPATH}:/{{ project_name }}/server"
+
+EXPOSE {{ server_port }}
