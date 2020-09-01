@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { actions } from "../slices";
 
 const fetchApps = addApps => () => {
-  const url = `http://server:8000/applications/`;
+  const url = `http://localhost:8000/applications/`;
   axios
     .get(url)
     .then(response => {
