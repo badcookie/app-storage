@@ -51,9 +51,9 @@ def handle_internal_error(func) -> Callable:
                 message = error.reason
                 handler.handle_client_error(status=error.status_code, error=message)
             else:
-                message = str(error)
-                handler.handle_internal_error(error=message)
+                message = error
+                handler.handle_internal_error(error=str(message))
 
-            logging.error(message)
+            logging.error(message, exc_info=True)
 
     return wrapper
