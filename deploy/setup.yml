@@ -25,6 +25,12 @@
         - "ui.Dockerfile"
         - "docker-compose.yml"
 
+    - name: stop running services
+      shell: docker-compose down
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
+
     - name: run base services
       shell: docker-compose up -d db unit
       args:

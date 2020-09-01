@@ -5,7 +5,6 @@ stages:
 deploy:
   stage: deploy
   tags: [deploy]
-  when: manual
   script:
     - cd deploy
     - ansible-playbook -i hosts --limit remote setup.yml
