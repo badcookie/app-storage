@@ -30,8 +30,14 @@
       args:
         chdir: "{{ project_path }}"
 
-    - name: run server
+    - name: run client and server
       shell: docker-compose up -d --build server ui
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
+
+    - name: remove intermediate images
+      shell: docker image prune --force
       args:
         chdir: "{{ project_path }}"
       when: env != 'development'

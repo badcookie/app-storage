@@ -3,6 +3,6 @@ server {
     root {{ static_path }};
 
     location / {
-        proxy_pass http://server:{{ server_port }}
+        proxy_pass http://server:{{ server_port }};
     }
 }
