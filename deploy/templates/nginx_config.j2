@@ -2,7 +2,7 @@ server {
     listen 80;
     root {{ static_path }};
 
-    location / {
-        proxy_pass http://server:{{ server_port }};
+    location /applications/ {
+        proxy_pass http://server:{{ server_port }}/applications/;
     }
 }
