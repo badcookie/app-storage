@@ -9,7 +9,6 @@ services:
       context: .
     image: ${PROJECT_NAME}:unit
     container_name: ${PROJECT_NAME}-unit
-    network_mode: host
     command:
       ["unitd", "--no-daemon", "--control", "127.0.0.1:${UNIT_PORT:-{{ unit_port }}}"]
     volumes:
@@ -23,8 +22,6 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - ${DB_PORT:-{{ db_port }}}:27017
 
   server:
     build:
@@ -35,8 +32,6 @@ services:
     command: python server/main.py
     env_file:
       - .env
-    ports:
-      - ${SERVER_PORT:-{{ server_port }}}:${SERVER_PORT:-{{ server_port }}}
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
