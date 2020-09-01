@@ -68,11 +68,6 @@ class BaseHandler(web.RequestHandler):
         self.finish(error)
 
 
-class IndexHandler(BaseHandler):
-    async def get(self):
-        return self.render('index.html')
-
-
 class ApplicationsHandler(BaseHandler):
     """
     Принимает zip архив приложения, создаёт для него
@@ -179,7 +174,6 @@ def make_app(options) -> 'web.Application':
     logging.config.dictConfig(settings.logging)
 
     routes = [
-        (r'/', IndexHandler),
         (r'/applications/', ApplicationsHandler),
         (r'/applications/([^/]+)/?', ApplicationsHandler),
     ]

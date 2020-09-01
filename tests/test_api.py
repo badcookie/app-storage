@@ -110,8 +110,6 @@ async def test_successful_app_lifecycle(
     updated_data = json.loads(response.body.decode())
     updated_app = await repo.get(id=app_id)
 
-    print(await repo.list())
-
     assert updated_app.name == updated_data['name']
     assert updated_app.description == updated_data['description']
 
