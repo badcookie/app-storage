@@ -1,4 +1,4 @@
-- hosts: local
+- hosts: all
   gather_facts: false
 
   vars:
@@ -16,6 +16,7 @@
         dest: "{{ project_path }}/{{ item }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
+        mode: +rwx
       with_items:
         - ".env"
         - "nginx_config"
@@ -28,3 +29,15 @@
       shell: docker-compose up -d --build db unit
       args:
         chdir: "{{ project_path }}"
+
+    - name: run client and server
+      shell: docker-compose up -d --build --force-recreate server ui
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
+
+    - name: remove intermediate images
+      shell: docker image prune --force
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
