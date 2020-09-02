@@ -7,4 +7,4 @@ deploy:
   tags: [deploy]
   script:
     - cd deploy
-    - ansible-playbook -i hosts --limit remote setup.yml
+    - ansible-playbook -i hosts remote_setup.yml

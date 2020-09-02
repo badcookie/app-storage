@@ -1,0 +1,43 @@
+- hosts: remote
+  gather_facts: false
+
+  vars:
+    templates_path: "./templates"
+
+  tasks:
+    - name: ensure apps path exists
+      file:
+        path: "{{ apps_path }}"
+        state: directory
+      when: env == 'development'
+
+    - name: setup env files
+      template:
+        src: "{{ templates_path }}/{{ item }}.j2"
+        dest: "{{ project_path }}/{{ item }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      with_items:
+        - ".env"
+        - "nginx_config"
+        - "server.Dockerfile"
+        - "unit.Dockerfile"
+        - "ui.Dockerfile"
+        - "docker-compose.yml"
+
+    - name: run base services
+      shell: docker-compose up -d --build db unit
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: run client and server
+      shell: docker-compose up -d --build --force-recreate server ui
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
+
+    - name: remove intermediate images
+      shell: docker image prune --force
+      args:
+        chdir: "{{ project_path }}"
+      when: env != 'development'
