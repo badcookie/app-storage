@@ -9,7 +9,7 @@ server {
         proxy_pass http://server:{{ server_port }}/applications/;
     }
 
-    location ~ /^[a-zA-Z0-9]{8}$ {
+    location ~ "/^[a-zA-Z0-9]{8}$" {
         proxy_pass http://unit:80;
     }
 }
