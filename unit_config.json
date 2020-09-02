@@ -1,5 +1,9 @@
 {
-  "listeners": {},
+  "listeners": {
+    "*:80": {
+      "pass": "routes$uri"
+    }
+  },
   "routes": {},
   "applications": {}
 }
