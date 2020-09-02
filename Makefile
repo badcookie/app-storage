@@ -13,7 +13,7 @@ install:
 
 setup:
 	@cd deploy
-	@ansible-playbook -i hosts --limit local setup.yml
+	@ansible-playbook -i hosts local_setup.yml
 
 server:
 	@export PYTHONPATH="${PYTHONPATH}:."
