@@ -26,12 +26,12 @@
         - "docker-compose.yml"
 
     - name: run base services
-      shell: docker-compose up -d db unit
+      shell: docker-compose up -d --build db unit
       args:
         chdir: "{{ project_path }}"
 
     - name: run client and server
-      shell: docker-compose up -d --force-recreate server ui
+      shell: docker-compose up -d --build --force-recreate server ui
       args:
         chdir: "{{ project_path }}"
       when: env != 'development'
