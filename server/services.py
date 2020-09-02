@@ -75,18 +75,18 @@ class UnitService:
 
         log_event('registered app routing', app_uid)
 
-        app_port = get_unused_port()
+        # app_port = get_unused_port()
+        #
+        # listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
+        # listener_data = {'pass': f'routes/{app_uid}'}
+        #
+        # await self.client.fetch(
+        #     listener_url, body=json.dumps(listener_data), method='PUT'
+        # )
+        #
+        # log_event('listener registered on port %s', app_uid, app_port)
 
-        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        listener_data = {'pass': f'routes/{app_uid}'}
-
-        await self.client.fetch(
-            listener_url, body=json.dumps(listener_data), method='PUT'
-        )
-
-        log_event('listener registered on port %s', app_uid, app_port)
-
-        return app_port
+        # return app_port
 
     async def unregister_app(self, app_uid: str, app_port: int) -> None:
         """Удаляет приложение из конфигурации
@@ -95,10 +95,10 @@ class UnitService:
         :param app_port: порт приложения
         """
 
-        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        await self.client.fetch(listener_url, method='DELETE')
-
-        log_event('unregistered listener on port %s', app_uid, app_port)
+        # listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
+        # await self.client.fetch(listener_url, method='DELETE')
+        #
+        # log_event('unregistered listener on port %s', app_uid, app_port)
 
         route_url = f'{self.BASE_URL}/routes/{app_uid}/'
         await self.client.fetch(route_url, method='DELETE')
