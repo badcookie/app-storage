@@ -269,7 +269,7 @@ def create_application_environment(package: 'ZipFile') -> str:
 
 def get_unused_port() -> int:
     with socket(AF_INET, SOCK_STREAM) as sock:
-        sock.bind((settings.UNIT_HOST, 0))
+        sock.bind(('', 0))
         return sock.getsockname()[1]
 
 
