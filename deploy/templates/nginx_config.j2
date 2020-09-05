@@ -1,15 +1,19 @@
 server {
     listen 80;
+    root {{ static_path }};
 
-    location / {
-        root {{ static_path }};
-    }
-
-    location /applications/ {
-        proxy_pass http://server:{{ server_port }}/applications/;
-    }
+    access_log /etc/nginx/access.log debug;
+    error_log /etc/nginx/error.log debug;
 
     location ~ "^\/[A-Za-z0-9]{8}\/.*$" {
         proxy_pass http://unit:80;
+    }
+
+    location / {
+        try_files $uri @server;
+    }
+
+    location @server {
+        proxy_pass http://server:{{ server_port }}/applications/;
     }
 }
