@@ -4,16 +4,21 @@ import { Card, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../slices";
+import { routes, flowStates } from "../consts";
 
-const fetchApps = addApps => () => {
-  const url = `http://${document.location.hostname}:8000/applications/`;
+const fetchApps = ({ addApps, setFlowState, setErrorInfo }) => () => {
+  const url = routes.getApps();
   axios
     .get(url)
     .then(response => {
       const apps = response.data;
       addApps(apps);
+      setFlowState(flowStates.ready);
     })
-    .catch(console.log);
+    .catch(error => {
+      setFlowState(flowStates.error);
+      setErrorInfo(error);
+    });
 };
 
 const getApps = ({ apps }) => apps;
@@ -28,7 +33,7 @@ const renderSingleApp = props => app => {
         <span className="d-inline-flex align-items-center">{appName}</span>
         <Button
           variant="success"
-          href={`http://${document.location.hostname}:${app.port}`}
+          href={routes.visitApp(app.port)}
           target="_blank"
           className="ml-auto mr-1"
         >
@@ -65,17 +70,22 @@ const renderApps = (apps, appManagementTools) => {
 
 const Applications = () => {
   const dispatch = useDispatch();
-  const addApps = apps => dispatch(actions.apps.addApps(apps));
+
   const setModalInfo = info => dispatch(actions.modalInfo.setModalInfo(info));
-
   const handleAppAdd = () => setModalInfo({ type: "add" });
-
   const appManagementTools = {
     handleRemove: app => () => setModalInfo({ type: "remove", app }),
     handleUpdate: app => () => setModalInfo({ type: "update", app })
   };
 
-  useEffect(fetchApps(addApps), []);
+  const addApps = apps => dispatch(actions.apps.addApps(apps));
+  const setFlowState = newState =>
+    dispatch(actions.flowState.setState(newState));
+  const setErrorInfo = errorData =>
+    dispatch(actions.errorInfo.setErrorInfo(errorData));
+
+  const props = { addApps, setFlowState, setErrorInfo };
+  useEffect(fetchApps(props), []);
 
   const apps = useSelector(getApps);
 

@@ -1,8 +1,11 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { Container, Row, Col } from "react-bootstrap";
+import LoadingOverlay from "react-loading-overlay";
+import { useSelector, useDispatch } from "react-redux";
+import { Container, Row, Col, Alert } from "react-bootstrap";
 
 import getModal from "./modals";
+import { actions } from "../slices";
+import { flowStates } from "../consts";
 import Applications from "./Applications";
 
 const renderModal = modalInfo => {
@@ -14,13 +17,36 @@ const renderModal = modalInfo => {
   return <ModalComponent />;
 };
 
+const renderErrorInfo = (errorInfo, resetError) => {
+  if (errorInfo === null) {
+    return null;
+  }
+
+  return (
+    <Alert variant="danger" onClose={resetError} dismissible>
+      <Alert.Heading>Oops...</Alert.Heading>
+      <p>{errorInfo}</p>
+    </Alert>
+  );
+};
+
+const getErrorInfo = ({ errorInfo }) => errorInfo;
+const getFlowState = ({ flowState }) => flowState;
 const getModalInfo = ({ modalInfo }) => modalInfo;
 
 const App = () => {
+  const dispatch = useDispatch();
+  const resetError = () => dispatch(actions.errorInfo.setErrorInfo(null));
+
   const modalInfo = useSelector(getModalInfo);
+  const flowState = useSelector(getFlowState);
+  const errorInfo = useSelector(getErrorInfo);
+
+  const isLoaderActive = flowState === flowStates.loading;
+
   return (
-    <>
-      <Container className="h-100 mt-5">
+    <LoadingOverlay active={isLoaderActive} spinner className="h-100">
+      <Container className="vh-100 pt-5">
         <Row>
           <Col>
             <Applications />
@@ -28,7 +54,8 @@ const App = () => {
         </Row>
       </Container>
       {renderModal(modalInfo)}
-    </>
+      {renderErrorInfo(errorInfo, resetError)}
+    </LoadingOverlay>
   );
 };
 
