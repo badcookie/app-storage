@@ -29,8 +29,9 @@ const handleSumbit = ({
     addApp(app);
     setFlowState(flowStates.ready);
   } catch (error) {
+    const message = error.response ? error.response.data : error.message;
     setFlowState(flowStates.error);
-    setErrorInfo(error);
+    setErrorInfo(message);
   }
 };
 

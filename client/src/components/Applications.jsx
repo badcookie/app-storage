@@ -16,8 +16,9 @@ const fetchApps = ({ addApps, setFlowState, setErrorInfo }) => () => {
       setFlowState(flowStates.ready);
     })
     .catch(error => {
+      console.log("ggg");
       setFlowState(flowStates.error);
-      setErrorInfo(error);
+      setErrorInfo(error.message);
     });
 };
 

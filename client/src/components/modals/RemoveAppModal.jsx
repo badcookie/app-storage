@@ -24,7 +24,7 @@ const handleSubmit = ({
     setFlowState(flowStates.ready);
   } catch (error) {
     setFlowState(flowStates.error);
-    setErrorInfo(error);
+    setErrorInfo(error.message);
   }
 };
 

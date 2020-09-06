@@ -24,8 +24,7 @@ const renderErrorInfo = (errorInfo, resetError) => {
 
   return (
     <Alert variant="danger" onClose={resetError} dismissible>
-      <Alert.Heading>Oops...</Alert.Heading>
-      <p>{errorInfo}</p>
+      Processing failed due to the following error: {errorInfo}
     </Alert>
   );
 };
@@ -45,7 +44,8 @@ const App = () => {
   const isLoaderActive = flowState === flowStates.loading;
 
   return (
-    <LoadingOverlay active={isLoaderActive} spinner className="h-100">
+    <LoadingOverlay active={isLoaderActive} spinner>
+      {renderErrorInfo(errorInfo, resetError)}
       <Container className="vh-100 pt-5">
         <Row>
           <Col>
@@ -54,7 +54,6 @@ const App = () => {
         </Row>
       </Container>
       {renderModal(modalInfo)}
-      {renderErrorInfo(errorInfo, resetError)}
     </LoadingOverlay>
   );
 };
