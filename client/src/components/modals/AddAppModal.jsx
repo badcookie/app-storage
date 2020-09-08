@@ -7,7 +7,7 @@ import { actions } from "../../slices";
 import FileUploadForm from "../FileUploadForm";
 import { routes, flowStates } from "../../consts";
 
-const handleSumbit = ({
+const handleSubmit = ({
   addApp,
   hideModal,
   setFlowState,
@@ -52,7 +52,7 @@ const AddAppModal = () => {
         <Modal.Title>Load application</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <FileUploadForm handleSumbit={handleSumbit(submitProps)} />
+        <FileUploadForm handleSubmit={handleSubmit(submitProps)} />
       </Modal.Body>
     </Modal>
   );
