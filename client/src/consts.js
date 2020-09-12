@@ -1,9 +1,8 @@
 const env = process.env.NODE_ENV || "development";
 
 const apiHost = `${document.location.hostname}`;
-const apiPort = 8000;
 
-const apiAddress = `http://${apiHost}:${apiPort}`;
+const apiAddress = `http://${apiHost}`;
 
 export const routes = {
   getApps: () => [apiAddress, "applications"].join("/").concat("/"),
