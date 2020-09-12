@@ -1,3 +1,4 @@
 project_name: app-storage
 mounted_apps_path: /apps/
 static_path: /var/www/static/
+domain-name: "{{ project_name }}.xyz"
