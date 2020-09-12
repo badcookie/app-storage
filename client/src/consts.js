@@ -10,7 +10,9 @@ export const routes = {
   updateApp: id => [apiAddress, "applications", id].join("/").concat("/"),
   deleteApp: id => [apiAddress, "applications", id].join("/").concat("/"),
   visitApp: uid =>
-    env === "development" ? `${apiHost}:9000/${uid}` : `${uid}.app-storage.xyz`
+    env === "development"
+      ? `${apiAddress}:9000/${uid}`
+      : `http://${uid}.app-storage.xyz`
 };
 
 export const flowStates = {
