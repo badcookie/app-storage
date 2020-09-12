@@ -11,7 +11,7 @@ export const routes = {
   deleteApp: id => [apiAddress, "applications", id].join("/").concat("/"),
   visitApp: uid =>
     env === "development"
-      ? `${apiAddress}:9000/${uid}`
+      ? `${apiAddress}:8888/${uid}`
       : `http://${uid}.app-storage.xyz`
 };
 
