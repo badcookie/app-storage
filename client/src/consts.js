@@ -1,7 +1,4 @@
-const env = process.env.NODE_ENV || "development";
-
-const apiHost =
-  env === "development" ? `${document.location.hostname}` : "server";
+const apiHost = `${document.location.hostname}`;
 const apiPort = 8000;
 
 const apiAddress = `http://${apiHost}:${apiPort}`;
