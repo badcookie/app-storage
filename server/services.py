@@ -24,7 +24,7 @@ class UnitService:
 
     client = AsyncHTTPClient()
 
-    async def register_app(self, app_uid: str, environment_data: dict) -> int:
+    async def register_app(self, app_uid: str, environment_data: dict):
         """Регистрирует приложение в файловой системе
 
         :param app_uid: uid приложения

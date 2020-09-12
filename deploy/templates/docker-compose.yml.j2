@@ -11,6 +11,10 @@ services:
     container_name: ${PROJECT_NAME}-unit
     command:
       ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-{{ unit_port }}}"]
+    {% if develop -%}
+    ports:
+      - {{ unit_port }}:{{ unit_port }}
+    {% endif -%}
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 

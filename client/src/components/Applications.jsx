@@ -34,7 +34,7 @@ const renderSingleApp = props => app => {
         <span className="d-inline-flex align-items-center">{appName}</span>
         <Button
           variant="success"
-          href={routes.visitApp(app.port)}
+          href={routes.visitApp(app.uid)}
           target="_blank"
           className="ml-auto mr-1"
         >
