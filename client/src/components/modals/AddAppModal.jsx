@@ -5,13 +5,21 @@ import { useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
 import FileUploadForm from "../FileUploadForm";
+import { routes, flowStates } from "../../consts";
 
-const handleSumbit = ({ addApp, hideModal }) => async event => {
+const handleSubmit = ({
+  addApp,
+  hideModal,
+  setFlowState,
+  setErrorInfo
+}) => async event => {
   event.preventDefault();
 
-  const formData = new FormData(event.target);
+  hideModal();
+  setFlowState(flowStates.loading);
 
-  const url = `http://${document.location.hostname}/applications/`;
+  const formData = new FormData(event.target);
+  const url = routes.createApp();
 
   try {
     const response = await axios.post(url, formData, {
@@ -19,19 +27,24 @@ const handleSumbit = ({ addApp, hideModal }) => async event => {
     });
     const app = response.data;
     addApp(app);
-  } catch (e) {
-    console.log(e);
+    setFlowState(flowStates.ready);
+  } catch (error) {
+    const message = error.response ? error.response.data : error.message;
+    setFlowState(flowStates.error);
+    setErrorInfo(message);
   }
-
-  hideModal();
 };
 
 const AddAppModal = () => {
   const dispatch = useDispatch();
   const addApp = app => dispatch(actions.apps.addApp(app));
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
+  const setFlowState = newState =>
+    dispatch(actions.flowState.setState(newState));
+  const setErrorInfo = errorData =>
+    dispatch(actions.errorInfo.setErrorInfo(errorData));
 
-  const submitProps = { addApp, hideModal };
+  const submitProps = { addApp, hideModal, setFlowState, setErrorInfo };
 
   return (
     <Modal show onHide={hideModal} centered>
@@ -39,7 +52,7 @@ const AddAppModal = () => {
         <Modal.Title>Load application</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <FileUploadForm handleSumbit={handleSumbit(submitProps)} />
+        <FileUploadForm handleSubmit={handleSubmit(submitProps)} />
       </Modal.Body>
     </Modal>
   );

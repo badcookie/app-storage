@@ -1,14 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Form, Button } from "react-bootstrap";
+import bsCustomFileInput from "bs-custom-file-input";
 
-const FileUploadForm = ({ handleSumbit }) => (
-  <form onSubmit={handleSumbit}>
-    <label>
-      Upload file:
-      <input type="file" accept=".zip" name="zipfile" required />
-    </label>
-    <br />
-    <button type="submit">Submit</button>
-  </form>
-);
+const FileUploadForm = ({ handleSubmit }) => {
+  useEffect(() => {
+    bsCustomFileInput.init();
+  });
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      <Form.Group>
+        <Form.Row>
+          <Form.File
+            id="custom-file"
+            label="Upload file"
+            accept=".zip"
+            name="zipfile"
+            custom
+            required
+          />
+        </Form.Row>
+      </Form.Group>
+      <Button type="submit">Submit</Button>
+    </Form>
+  );
+};
 
 export default FileUploadForm;

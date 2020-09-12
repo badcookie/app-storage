@@ -4,17 +4,28 @@ import { Modal, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
+import { routes, flowStates } from "../../consts";
 
-const handleSubmit = ({ appId, removeApp, hideModal }) => async () => {
-  const url = `http://${document.location.hostname}/applications/${appId}/`;
-  await axios
-    .delete(url)
-    .then(response => {
-      removeApp(appId);
-    })
-    .catch(console.log);
-
+const handleSubmit = ({
+  appId,
+  removeApp,
+  hideModal,
+  setFlowState,
+  setErrorInfo
+}) => async () => {
   hideModal();
+  setFlowState(flowStates.loading);
+
+  const url = routes.deleteApp(appId);
+
+  try {
+    await axios.delete(url);
+    removeApp(appId);
+    setFlowState(flowStates.ready);
+  } catch (error) {
+    setFlowState(flowStates.error);
+    setErrorInfo(error.message);
+  }
 };
 
 const getModalInfo = ({ modalInfo }) => modalInfo;
@@ -23,9 +34,19 @@ const RemoveAppModal = () => {
   const dispatch = useDispatch();
   const removeApp = appId => dispatch(actions.apps.removeApp(appId));
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
+  const setFlowState = newState =>
+    dispatch(actions.flowState.setState(newState));
+  const setErrorInfo = errorData =>
+    dispatch(actions.errorInfo.setErrorInfo(errorData));
 
   const { app } = useSelector(getModalInfo);
-  const sumbitProps = { appId: app.id, removeApp, hideModal };
+  const sumbitProps = {
+    appId: app.id,
+    removeApp,
+    hideModal,
+    setFlowState,
+    setErrorInfo
+  };
 
   return (
     <Modal show onHide={hideModal} centered>

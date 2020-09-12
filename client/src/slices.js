@@ -1,5 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+import { flowStates } from "./consts";
+
 const appSlice = createSlice({
   name: "apps",
   initialState: [],
@@ -17,6 +19,22 @@ const appSlice = createSlice({
   }
 });
 
+const flowStateSlice = createSlice({
+  name: "flowState",
+  initialState: flowStates.loading,
+  reducers: {
+    setState: (state, action) => action.payload
+  }
+});
+
+const errorSlice = createSlice({
+  name: "errorInfo",
+  initialState: null,
+  reducers: {
+    setErrorInfo: (state, action) => action.payload
+  }
+});
+
 const modalInfoSlice = createSlice({
   name: "modalInfo",
   initialState: { type: null, app: null },
@@ -28,12 +46,16 @@ const modalInfoSlice = createSlice({
 
 const reducers = {
   apps: appSlice.reducer,
-  modalInfo: modalInfoSlice.reducer
+  flowState: flowStateSlice.reducer,
+  modalInfo: modalInfoSlice.reducer,
+  errorInfo: errorSlice.reducer
 };
 
 const actions = {
   apps: appSlice.actions,
-  modalInfo: modalInfoSlice.actions
+  flowState: flowStateSlice.actions,
+  modalInfo: modalInfoSlice.actions,
+  errorInfo: errorSlice.actions
 };
 
 export { reducers, actions };
