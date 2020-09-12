@@ -16,6 +16,6 @@ server {
    server_name ~^<app_uid>\.{{ domain_name }}$;
 
    location / {
-       proxy_pass http://unit:{{ unit_apps_port }}/;
+       proxy_pass http://unit:{{ unit_apps_port }}/$app_uid;
    }
 }
