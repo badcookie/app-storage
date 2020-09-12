@@ -16,6 +16,6 @@ server {
    server_name *.{{ domain_name }};
 
    location / {
-       proxy_pass http://unit/;
+       proxy_pass http://unit:{{ unit_apps_port }}/;
    }
 }

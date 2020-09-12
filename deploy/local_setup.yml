@@ -19,6 +19,7 @@
       with_items:
         - ".env"
         - "nginx_config"
+        - "unit_config.json"
         - "server.Dockerfile"
         - "unit.Dockerfile"
         - "ui.Dockerfile"
