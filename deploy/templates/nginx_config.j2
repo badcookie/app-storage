@@ -13,9 +13,10 @@ server {
 
 server {
    listen 80;
-   server_name ~^<app_uid>\.{{ domain_name }}$;
+   server_name ~^(www\.)?(?<app_uid>.+)$;
 
    location / {
-       proxy_pass http://unit:{{ unit_apps_port }}/$app_uid;
+       return 200 $app_uid;
+       # proxy_pass http://unit:{{ unit_apps_port }}/$app_uid;
    }
 }
