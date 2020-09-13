@@ -17,7 +17,7 @@ server {
 
 server {
    listen 80;
-   server_name ^(www\.)?(?<app_uid>.+)\.{{ project_name }}\.xyz$;
+   server_name ~^(www\.)?(?<app_uid>.+)\.{{ project_name }}\.xyz$;
    resolver 127.0.0.11;
 
    location / {
