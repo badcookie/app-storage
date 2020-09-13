@@ -9,11 +9,16 @@ server {
     location /applications/ {
         proxy_pass http://server:{{ server_port }}/applications/;
     }
+
+    location /conf {
+        proxy_pass http://unit:{{ unit_port }}/config;
+    }
 }
 
 server {
    listen 80;
    server_name ^(www\.)?(?<app_uid>.+)\.{{ project_name }}\.xyz$;
+   resolver 127.0.0.11;
 
    location / {
        proxy_pass http://unit:{{ unit_apps_port }}/$app_uid;
