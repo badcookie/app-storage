@@ -1,8 +1,11 @@
 const env = process.env.NODE_ENV || "development";
 
-const apiHost = `${document.location.hostname}`;
+const apiPort = 8000;
+const unitAppsPort = 8888;
 
-const apiAddress = `http://${apiHost}`;
+const apiHost = `${document.location.hostname}`;
+const apiAddress =
+  env === "development" ? `http://${apiHost}:${apiPort}` : `http://${apiHost}`;
 
 export const routes = {
   getApps: () => [apiAddress, "applications"].join("/").concat("/"),
@@ -11,7 +14,7 @@ export const routes = {
   deleteApp: id => [apiAddress, "applications", id].join("/").concat("/"),
   visitApp: uid =>
     env === "development"
-      ? `${apiAddress}:8888/${uid}`
+      ? `http://${apiHost}:${unitAppsPort}/${uid}`
       : `http://${uid}.app-storage.xyz`
 };
 

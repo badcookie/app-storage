@@ -12,9 +12,7 @@ services:
     command:
       ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-{{ unit_port }}}"]
     {% if develop -%}
-    ports:
-      - {{ unit_port }}:{{ unit_port }}
-      - {{ unit_apps_port }}:{{ unit_apps_port }}
+    network_mode: host
     {% endif -%}
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
@@ -24,6 +22,10 @@ services:
     container_name: ${PROJECT_NAME}-db
     volumes:
       - db:/data/db
+    {% if develop -%}
+    ports:
+      - {{ db_port }}:{{ db_port }}
+    {% endif -%}
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
