@@ -36,6 +36,7 @@ class DBSettings(BaseSettings):
 class Settings(BaseSettings):
     ENVIRONMENT: 'Environment'
     PROJECT_NAME: str
+    PROJECT_ADDRESS: str
 
     DB: 'DBSettings' = DBSettings(_env_file=env_path)
 
