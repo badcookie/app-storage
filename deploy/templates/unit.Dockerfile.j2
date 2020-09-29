@@ -1,3 +1,4 @@
+{% if env == 'development' %}
 FROM node:10.20.0-jessie
 
 RUN mkdir /temp
@@ -9,11 +10,13 @@ COPY client/yarn.lock .
 RUN yarn
 COPY client/ .
 RUN yarn build
-
+{% endif %}
 
 FROM nginx/unit:1.19.0-python3.7
 
+{% if env == 'development' %}
 RUN mkdir /var/www {{ static_path }}
 COPY --from=0 /temp/build/ {{ static_path }}
+{% endif %}
 
 EXPOSE {{ unit_port }} {{ unit_apps_port }}

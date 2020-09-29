@@ -1,4 +1,7 @@
 {
+{% if env == 'development' %}
+  "listeners": {},
+{% else %}
   "listeners": {
     "*:{{ unit_apps_port }}": {
       "pass": "routes"
@@ -23,5 +26,6 @@
       }
     }
   ],
+{% endif %}
   "applications": {}
 }
