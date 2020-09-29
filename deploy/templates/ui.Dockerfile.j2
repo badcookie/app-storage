@@ -7,7 +7,7 @@ COPY client/package.json .
 COPY client/yarn.lock .
 
 COPY deploy/files/cert.pem .
-COPY deploy/files/key.pem
+COPY deploy/files/key.pem .
 
 RUN yarn
 COPY client/ .
