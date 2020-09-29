@@ -38,6 +38,8 @@ services:
     image: ${PROJECT_NAME}:server
     container_name: ${PROJECT_NAME}-server
     command: python server/main.py
+    ports:
+      - {{ server_port }}:{{ server_port }}
     env_file:
       - .env
     volumes:
