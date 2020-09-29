@@ -6,9 +6,6 @@ WORKDIR /temp
 COPY client/package.json .
 COPY client/yarn.lock .
 
-COPY deploy/files/cert.pem .
-COPY deploy/files/key.pem .
-
 RUN yarn
 COPY client/ .
 RUN yarn build
@@ -18,5 +15,5 @@ FROM nginx:1.17.9-alpine
 RUN mkdir /var/www {{ static_path }}
 COPY --from=0 /temp/build/ {{ static_path }}
 
-COPY --from=0 /temp/cert.pem {{ ssl_certificate_path }}
-COPY --from=0 /temp/key.pem {{ ssl_certificate_key_path }}
+COPY deploy/files/cert.pem {{ ssl_certificate_path }}
+COPY deploy/files/key.pem {{ ssl_certificate_key_path }}
