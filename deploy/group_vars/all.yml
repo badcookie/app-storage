@@ -1,4 +1,6 @@
 project_name: app-storage
+project_address: "{{ project_name }}.xyz"
+
 mounted_apps_path: /apps/
 static_path: /var/www/static/
 unit_apps_port: 8888

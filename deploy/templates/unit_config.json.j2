@@ -1,9 +1,27 @@
 {
   "listeners": {
-    "*:{{ unit_apps_port }}": {
-      "pass": "routes$uri"
+    "*:80": {
+      "pass": "routes"
     }
   },
-  "routes": {},
+  "routes": [
+    {
+      "match": {
+        "host": "{{ project_address }}",
+        "uri": "*/static/*"
+      },
+      "action": {
+        "share": "/var/www/"
+      }
+    },
+    {
+      "match": {
+        "host": "{{ project_address }}"
+      },
+      "action": {
+        "proxy": "http://server:{{ server_port }}"
+      }
+    }
+  ],
   "applications": {}
 }
