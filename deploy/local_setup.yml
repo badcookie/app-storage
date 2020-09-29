@@ -24,6 +24,6 @@
         - "docker-compose.yml"
 
     - name: run base services
-      shell: docker-compose up -d --build db unit
+      shell: docker-compose up -d db unit
       args:
         chdir: "{{ project_path }}"

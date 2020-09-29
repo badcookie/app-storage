@@ -10,10 +10,8 @@ services:
     image: ${PROJECT_NAME}:unit
     container_name: ${PROJECT_NAME}-unit
     command:
-      ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-{{ unit_port }}}"]
-    {% if develop -%}
+      ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-9000}"]
     network_mode: host
-    {% endif -%}
     volumes:
       - ./unit_config.json:/var/lib/unit/conf.json
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
@@ -25,7 +23,7 @@ services:
       - db:/data/db
     {% if develop -%}
     ports:
-      - {{ db_port }}:{{ db_port }}
+      - {{ db_port }}:27017
     {% endif -%}
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER}

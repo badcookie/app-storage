@@ -1,6 +1,6 @@
 {
   "listeners": {
-    "*:80": {
+    "*:{{ unit_apps_port }}": {
       "pass": "routes"
     }
   },
@@ -19,7 +19,7 @@
         "host": "{{ project_address }}"
       },
       "action": {
-        "proxy": "http://server:{{ server_port }}"
+        "proxy": "http://{{ server_host }}:{{ server_port }}"
       }
     }
   ],
