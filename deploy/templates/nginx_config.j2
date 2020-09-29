@@ -13,7 +13,7 @@ server {
     }
 
     location /applications/ {
-        proxy_pass http://server:{{ server_port }}/applications/;
+        proxy_pass https://server:{{ server_port }}/applications/;
     }
 }
 
