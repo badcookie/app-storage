@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import venv
 from abc import ABC, abstractmethod
+from functools import partial
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
 from time import time
@@ -68,31 +69,33 @@ class UnitService(ABC):
 
 
 class ProductionUnitService(UnitService):
-    async def register_app(self, app_uid: str, environment_data: dict) -> None:
-        """Регистрирует приложение в файловой системе
+    def __init__(self):
+        self.URLS = {
+            'routes': lambda: f'{self.BASE_URL}/routes/',
+            'application': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/',
+            'named_route': lambda route_key: f'{self.BASE_URL}/routes/{route_key}/',
+        }
 
-        :param app_uid: uid приложения
-        :param environment_data: переменные среды приложения
-        """
+    async def _load_application(
+        self, app_uid: str, app_dirpath: str, env_data: dict
+    ) -> None:
+        venv_dir = os.path.join(app_dirpath, 'venv')
 
-        inner_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        venv_dir = os.path.join(inner_app_path, 'venv')
-
-        wsgi_module = environment_data.get('ENTRYPOINT')
+        wsgi_module = env_data.get('ENTRYPOINT')
 
         app_creation_ts = str(time())
         environment = {
-            **environment_data,
+            **env_data,
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
 
         app_data = {
             'type': 'python 3',
-            'path': environment_data.get('PROJECT_WORKDIR') or inner_app_path,
+            'path': env_data.get('PROJECT_WORKDIR') or app_dirpath,
             'module': wsgi_module,
             'home': venv_dir,
             'environment': environment,
-            'working_directory': inner_app_path,
+            'working_directory': app_dirpath,
         }
         app_url = f'{self.BASE_URL}/applications/{app_uid}/'
 
@@ -100,24 +103,77 @@ class ProductionUnitService(UnitService):
 
         log_event('registered app configuration', app_uid)
 
-        static_path = environment_data.get('STATIC_PATH')
-        base_routes = [{'action': {'pass': f'applications/{app_uid}'}}]
+    # TODO: atomicity
+    async def _load_routes(
+        self, app_uid: str, app_dirpath: str, env_data: dict
+    ) -> None:
+        static_path = env_data.get('STATIC_PATH')
+        routes_url = self.URLS['routes']()
 
-        if not static_path:
-            routes = base_routes
-        else:
-            absolute_static_path = os.path.join(inner_app_path, static_path)
+        if static_path:
+            absolute_static_path = os.path.join(app_dirpath, static_path)
             static_route = {
-                'match': {'uri': '*/static/*'},
+                'match': {
+                    'host': f'{app_uid}.{settings.PROJECT_ADDRESS}',
+                    'uri': '*/static/*',
+                },
                 'action': {'share': absolute_static_path},
             }
-            routes = [static_route, *base_routes]
 
-        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
+            await self.client.fetch(
+                routes_url, body=json.dumps(static_route), method='POST'
+            )
 
-        await self.client.fetch(route_url, body=json.dumps(routes), method='PUT')
+        app_route = {
+            'match': {'host': f'{app_uid}.{settings.PROJECT_ADDRESS}'},
+            'action': {'pass': f'applications/{app_uid}'},
+        }
+
+        await self.client.fetch(routes_url, body=json.dumps(app_route), method='POST')
 
         log_event('registered app routing', app_uid)
+
+    async def register_app(self, app_uid: str, environment_data: dict) -> None:
+        """Регистрирует приложение в файловой системе
+
+        :param app_uid: uid приложения
+        :param environment_data: переменные среды приложения
+        """
+
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        await self._load_application(app_uid, app_dirpath, environment_data)
+        await self._load_routes(app_uid, app_dirpath, environment_data)
+
+    async def _remove_application(self, app_uid: str) -> None:
+        app_url = self.URLS['application'](app_uid)
+        await self.client.fetch(app_url, method='DELETE')
+
+        log_event('unregistered application', app_uid)
+
+    @staticmethod
+    def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
+        condition = route['match']
+        expected_host = condition['host']
+
+        app_uid, *_ = expected_host.split('.')
+        return app_uid == deleted_app_uid
+
+    async def _remove_routes(self, app_uid: str) -> None:
+        routes_url = self.URLS['routes']()
+
+        routes_response = await self.client.fetch(routes_url, method='GET')
+        response_data = routes_response.body.decode()
+
+        routes = json.loads(response_data)
+
+        is_deleted_app_route = partial(self._is_deleted_app_route, app_uid)
+        filtered_routes = [route for route in routes if not is_deleted_app_route(route)]
+
+        await self.client.fetch(
+            routes_url, body=json.dumps(filtered_routes), method='PUT'
+        )
+
+        log_event('unregistered routes', app_uid)
 
     async def unregister_app(self, app_uid: str) -> None:
         """Удаляет приложение из конфигурации
@@ -125,15 +181,8 @@ class ProductionUnitService(UnitService):
         :param app_uid: uid приложения
         """
 
-        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
-        await self.client.fetch(route_url, method='DELETE')
-
-        log_event('unregistered route', app_uid)
-
-        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
-        await self.client.fetch(app_url, method='DELETE')
-
-        log_event('unregistered completely', app_uid)
+        await self._remove_routes(app_uid)
+        await self._remove_application(app_uid)
 
 
 class DevelopmentUnitService(UnitService):
