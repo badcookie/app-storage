@@ -15,6 +15,7 @@ services:
     network_mode: host
     {% endif -%}
     volumes:
+      - ./unit_config.json:/var/lib/unit/conf.json
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
   db:
