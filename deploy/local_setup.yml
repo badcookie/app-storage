@@ -18,8 +18,10 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
-        - "unit_config.json"
+        - "ui.Dockerfile"
+        - "nginx_config"
         - "unit.Dockerfile"
+        - "unit_config.json"
         - "server.Dockerfile"
         - "docker-compose.yml"
 

@@ -1,31 +1,9 @@
 {
-{% if env == 'development' %}
-  "listeners": {},
-{% else %}
   "listeners": {
     "*:{{ unit_apps_port }}": {
       "pass": "routes"
     }
   },
-  "routes": [
-    {
-      "match": {
-        "host": "{{ project_address }}",
-        "uri": "*/static/*"
-      },
-      "action": {
-        "share": "{{ static_path }}"
-      }
-    },
-    {
-      "match": {
-        "host": "{{ project_address }}"
-      },
-      "action": {
-        "proxy": "http://127.0.0.1:{{ server_port }}"
-      }
-    }
-  ],
-{% endif %}
+  "routes": [],
   "applications": {}
 }

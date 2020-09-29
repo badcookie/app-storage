@@ -8,7 +8,6 @@ db_password: password
 
 unit_host: localhost
 unit_port: 9000
-unit_apps_port: 8888
 
 server_port: 8000
 server_host: localhost

@@ -13,13 +13,15 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
-        - "unit_config.json"
+        - "ui.Dockerfile"
+        - "nginx_config"
         - "unit.Dockerfile"
+        - "unit_config.json"
         - "server.Dockerfile"
         - "docker-compose.yml"
 
     - name: run services
-      shell: docker-compose up -d --build --force-recreate db server unit
+      shell: docker-compose up -d --build --force-recreate db server unit ui
       args:
         chdir: "{{ project_path }}"
 
