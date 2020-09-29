@@ -21,7 +21,7 @@
         - "docker-compose.yml"
 
     - name: run services
-      shell: docker-compose up -d --build --force-recreate db server unit ui
+      shell: docker-compose up -d --force-recreate db server unit ui
       args:
         chdir: "{{ project_path }}"
 

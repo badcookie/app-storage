@@ -2,16 +2,14 @@ server {
     listen 80;
     root {{ static_path }};
 
+    client_max_body_size 10M;
+
     location / {
         try_files $uri $uri/index.html;
     }
 
     location /applications/ {
         proxy_pass http://server:{{ server_port }}/applications/;
-    }
-
-    location /conf {
-        proxy_pass http://unit:{{ unit_port }}/config;
     }
 }
 
