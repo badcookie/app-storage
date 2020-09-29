@@ -5,12 +5,6 @@
     templates_path: "./templates"
 
   tasks:
-    - name: ensure apps path exists
-      file:
-        path: "{{ apps_path }}"
-        state: directory
-      when: env == 'development'
-
     - name: setup env files
       template:
         src: "{{ templates_path }}/{{ item }}.j2"
@@ -19,26 +13,17 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
-        - "nginx_config"
         - "unit_config.json"
-        - "server.Dockerfile"
         - "unit.Dockerfile"
-        - "ui.Dockerfile"
+        - "server.Dockerfile"
         - "docker-compose.yml"
 
-    - name: run base services
-      shell: docker-compose up -d --build db unit
+    - name: run services
+      shell: docker-compose up -d --build --force-recreate db server unit
       args:
         chdir: "{{ project_path }}"
-
-    - name: run client and server
-      shell: docker-compose up -d --build --force-recreate server ui
-      args:
-        chdir: "{{ project_path }}"
-      when: env != 'development'
 
     - name: remove intermediate images
       shell: docker image prune --force
       args:
         chdir: "{{ project_path }}"
-      when: env != 'development'

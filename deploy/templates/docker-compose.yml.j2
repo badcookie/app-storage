@@ -43,18 +43,6 @@ services:
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
-  ui:
-    build:
-      context: .
-      dockerfile: ui.Dockerfile
-    image: ${PROJECT_NAME}:ui
-    container_name: ${PROJECT_NAME}-ui
-    ports:
-      - {% if develop -%} 8123 {%- else -%} 80 {%- endif -%}:80
-      - {% if develop -%} 8443 {%- else -%} 443 {%- endif -%}:443
-    volumes:
-      - ./nginx_config:/etc/nginx/conf.d/default.conf
-
 
 volumes:
   db: {}

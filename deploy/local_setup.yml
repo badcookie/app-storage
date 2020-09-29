@@ -18,11 +18,9 @@
         group: "{{ ansible_user }}"
       with_items:
         - ".env"
-        - "nginx_config"
         - "unit_config.json"
-        - "server.Dockerfile"
         - "unit.Dockerfile"
-        - "ui.Dockerfile"
+        - "server.Dockerfile"
         - "docker-compose.yml"
 
     - name: run base services

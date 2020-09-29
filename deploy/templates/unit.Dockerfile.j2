@@ -1,3 +1,19 @@
+FROM node:10.20.0-jessie
+
+RUN mkdir /temp
+
+WORKDIR /temp
+COPY client/package.json .
+COPY client/yarn.lock .
+
+RUN yarn
+COPY client/ .
+RUN yarn build
+
+
 FROM nginx/unit:1.19.0-python3.7
+
+RUN mkdir /var/www {{ static_path }}
+COPY --from=0 /temp/build/ {{ static_path }}
 
 EXPOSE {{ unit_port }} {{ unit_apps_port }}
