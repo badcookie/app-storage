@@ -26,6 +26,14 @@ class UnitService(ABC):
 
     client = AsyncHTTPClient()
 
+    def __init__(self):
+        self.URLS = {
+            'routes': lambda: f'{self.BASE_URL}/routes/',
+            'application': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/',
+            'app_route': lambda app_uid: f'{self.BASE_URL}/routes/{app_uid}/',
+            'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',
+        }
+
     @abstractmethod
     def register_app(self, *args) -> None:
         ...
@@ -49,7 +57,7 @@ class UnitService(ABC):
         }
 
         request_data = json.dumps(updated_env)
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        app_env_url = self.URLS['app_env'](app_uid)
         await self.client.fetch(app_env_url, body=request_data, method='PUT')
 
         log_event('app configuration updated', app_uid)
@@ -62,20 +70,13 @@ class UnitService(ABC):
             await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
 
     async def get_app_environment_data(self, app_uid: str) -> dict:
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        app_env_url = self.URLS['app_env'](app_uid)
         response = await self.client.fetch(app_env_url, method='GET')
         response_data = response.body.decode()
         return json.loads(response_data)
 
 
 class ProductionUnitService(UnitService):
-    def __init__(self):
-        self.URLS = {
-            'routes': lambda: f'{self.BASE_URL}/routes/',
-            'application': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/',
-            'named_route': lambda route_key: f'{self.BASE_URL}/routes/{route_key}/',
-        }
-
     async def _load_application(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
@@ -97,7 +98,7 @@ class ProductionUnitService(UnitService):
             'environment': environment,
             'working_directory': app_dirpath,
         }
-        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
+        app_url = self.URLS['application'](app_uid)
 
         await self.client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
