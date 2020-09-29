@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import venv
+from abc import ABC, abstractmethod
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
 from time import time
@@ -12,18 +13,61 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from server.errors import ApplicationInitError
-from server.settings import settings
+from server.settings import Environment, settings
 from server.validation import ENV_FILE_NAME, REQUIREMENTS_FILE_NAME
 from tornado.httpclient import AsyncHTTPClient
 
 
-class UnitService:
+class UnitService(ABC):
+    INITIAL_CONFIG_PATH = os.path.join(settings.BASE_DIR, 'unit_config.json')
     BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
     MODIFIED_AT_ENV_NAME = 'APPGEN'
-    INITIAL_CONFIG_PATH = os.path.join(settings.BASE_DIR, 'unit_config.json')
 
     client = AsyncHTTPClient()
 
+    @abstractmethod
+    def register_app(self, *args) -> None:
+        ...
+
+    @abstractmethod
+    def unregister_app(self, *args) -> None:
+        ...
+
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
+        """Перезагружает приложение через обновление переменной среды.
+        Сейчас документация предлагает только такой способ
+
+        :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
+        """
+
+        updated_modification_ts = str(time())
+        updated_env = {
+            **new_env_data,
+            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
+        }
+
+        request_data = json.dumps(updated_env)
+        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        await self.client.fetch(app_env_url, body=request_data, method='PUT')
+
+        log_event('app configuration updated', app_uid)
+
+    async def reset_configuration(self) -> None:
+        """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
+
+        with open(self.INITIAL_CONFIG_PATH) as config:
+            request_data = config.read().strip('\n')
+            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
+
+    async def get_app_environment_data(self, app_uid: str) -> dict:
+        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
+        response = await self.client.fetch(app_env_url, method='GET')
+        response_data = response.body.decode()
+        return json.loads(response_data)
+
+
+class ProductionUnitService(UnitService):
     async def register_app(self, app_uid: str, environment_data: dict) -> None:
         """Регистрирует приложение в файловой системе
 
@@ -91,38 +135,13 @@ class UnitService:
 
         log_event('unregistered completely', app_uid)
 
-    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
-        """Перезагружает приложение через обновление переменной среды.
-        Сейчас документация предлагает только такой способ
 
-        :param app_uid: uid приложения
-        :param new_env_data: новая конфигурация
-        """
+class DevelopmentUnitService(UnitService):
+    async def register_app(self, *args) -> None:
+        pass
 
-        updated_modification_ts = str(time())
-        updated_env = {
-            **new_env_data,
-            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
-        }
-
-        request_data = json.dumps(updated_env)
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
-        await self.client.fetch(app_env_url, body=request_data, method='PUT')
-
-        log_event('app configuration updated', app_uid)
-
-    async def reset_configuration(self) -> None:
-        """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
-
-        with open(self.INITIAL_CONFIG_PATH) as config:
-            request_data = config.read().strip('\n')
-            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
-
-    async def get_app_environment_data(self, app_uid: str) -> dict:
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
-        response = await self.client.fetch(app_env_url, method='GET')
-        response_data = response.body.decode()
-        return json.loads(response_data)
+    async def unregister_app(self, *args) -> None:
+        pass
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -289,3 +308,8 @@ def log_event(message: str, app_uid: str, *args):
         logging.info(message, *args, extra=extra_args)
     else:
         logging.info(message, extra=extra_args)
+
+
+def get_unit_service_from_env() -> 'UnitService':
+    is_production = settings.ENVIRONMENT == Environment.PRODUCTION
+    return ProductionUnitService() if is_production else DevelopmentUnitService()
