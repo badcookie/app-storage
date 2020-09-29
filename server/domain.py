@@ -9,7 +9,6 @@ class Entity(BaseModel):
 
 class Application(Entity):
     uid: str
-    port: int
     name: Optional[str]
     description: Optional[str]
 

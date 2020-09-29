@@ -24,17 +24,17 @@ class UnitService:
 
     client = AsyncHTTPClient()
 
-    async def register_app(self, app_uid: str, environment_data: dict):
+    async def register_app(self, app_uid: str, environment_data: dict) -> None:
         """Регистрирует приложение в файловой системе
 
         :param app_uid: uid приложения
         :param environment_data: переменные среды приложения
-        :returns порт, по которому доступно приложение
         """
 
         inner_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         venv_dir = os.path.join(inner_app_path, 'venv')
-        module = environment_data.get('ENTRYPOINT')
+
+        wsgi_module = environment_data.get('ENTRYPOINT')
 
         app_creation_ts = str(time())
         environment = {
@@ -45,7 +45,7 @@ class UnitService:
         app_data = {
             'type': 'python 3',
             'path': environment_data.get('PROJECT_WORKDIR') or inner_app_path,
-            'module': module,
+            'module': wsgi_module,
             'home': venv_dir,
             'environment': environment,
             'working_directory': inner_app_path,
@@ -75,30 +75,11 @@ class UnitService:
 
         log_event('registered app routing', app_uid)
 
-        # app_port = get_unused_port()
-        #
-        # listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        # listener_data = {'pass': f'routes/{app_uid}'}
-        #
-        # await self.client.fetch(
-        #     listener_url, body=json.dumps(listener_data), method='PUT'
-        # )
-        #
-        # log_event('listener registered on port %s', app_uid, app_port)
-
-        # return app_port
-
-    async def unregister_app(self, app_uid: str, app_port: int) -> None:
+    async def unregister_app(self, app_uid: str) -> None:
         """Удаляет приложение из конфигурации
 
         :param app_uid: uid приложения
-        :param app_port: порт приложения
         """
-
-        # listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        # await self.client.fetch(listener_url, method='DELETE')
-        #
-        # log_event('unregistered listener on port %s', app_uid, app_port)
 
         route_url = f'{self.BASE_URL}/routes/{app_uid}/'
         await self.client.fetch(route_url, method='DELETE')

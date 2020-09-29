@@ -108,9 +108,7 @@ class ApplicationsHandler(BaseHandler):
         app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
         app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
 
-        app = Application(
-            uid=app_uid, port=777, name=app_name, description=app_description
-        )
+        app = Application(uid=app_uid, name=app_name, description=app_description)
         app_id = await self.repository.add(app)
         app_data = {'id': app_id, **app.dict()}
 
@@ -158,9 +156,8 @@ class ApplicationsHandler(BaseHandler):
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
         uid = app_to_delete.uid
-        port = app_to_delete.port
 
-        await self.configurator.unregister_app(uid, port)
+        await self.configurator.unregister_app(uid)
         destroy_application_environment(uid)
         await self.repository.delete(id=app_id)
 
