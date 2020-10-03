@@ -11,6 +11,7 @@ class Application(Entity):
     uid: str
     name: Optional[str]
     description: Optional[str]
+    port: Optional[int]
 
 
 class ApplicationReadOnly(Application):

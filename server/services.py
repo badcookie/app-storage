@@ -22,7 +22,7 @@ from tornado.httpclient import AsyncHTTPClient
 class UnitService(ABC):
     INITIAL_CONFIG_PATH = os.path.join(settings.BASE_DIR, 'unit_config.json')
     BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
-    MODIFIED_AT_ENV_NAME = 'APPGEN'
+    MODIFIED_AT_ENV_NAME = 'MODIFIED_AT'
 
     client = AsyncHTTPClient()
 

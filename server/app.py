@@ -103,14 +103,19 @@ class ApplicationsHandler(BaseHandler):
 
         app_uid = create_application_environment(file)
         enviroment_variables = get_app_environment_data(app_uid)
-        app_meta = await self.configurator.register_app(app_uid, enviroment_variables)
+        result_data = await self.configurator.register_app(
+            app_uid, enviroment_variables
+        )
+        app_meta = result_data or {}
 
         app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
         app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
 
-        app = Application(uid=app_uid, name=app_name, description=app_description)
+        app = Application(
+            uid=app_uid, name=app_name, description=app_description, **app_meta
+        )
         app_id = await self.repository.add(app)
-        app_data = {'id': app_id, **app.dict(), **(app_meta or {})}
+        app_data = {'id': app_id, **app.dict()}
 
         self.set_status(201)
         self.write(app_data)
