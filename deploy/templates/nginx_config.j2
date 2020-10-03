@@ -20,6 +20,6 @@ server {
 
    location / {
        proxy_set_header Host $host;
-       proxy_pass http://unit:{{ unit_apps_port }}/;
+       proxy_pass http://localhost:{{ unit_apps_port }}/;
    }
 }
