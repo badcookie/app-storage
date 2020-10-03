@@ -31,55 +31,19 @@ class UnitService(ABC):
             'routes': lambda: f'{self.BASE_URL}/routes/',
             'application': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/',
             'app_route': lambda app_uid: f'{self.BASE_URL}/routes/{app_uid}/',
-            'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',
+            'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
         }
 
-    @abstractmethod
-    def register_app(self, *args) -> None:
-        ...
-
-    @abstractmethod
-    def unregister_app(self, *args) -> None:
-        ...
-
-    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
-        """Перезагружает приложение через обновление переменной среды.
-        Сейчас документация предлагает только такой способ
-
-        :param app_uid: uid приложения
-        :param new_env_data: новая конфигурация
-        """
-
-        updated_modification_ts = str(time())
-        updated_env = {
-            **new_env_data,
-            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
-        }
-
-        request_data = json.dumps(updated_env)
-        app_env_url = self.URLS['app_env'](app_uid)
-        await self.client.fetch(app_env_url, body=request_data, method='PUT')
-
-        log_event('app configuration updated', app_uid)
-
-    async def reset_configuration(self) -> None:
-        """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
-
-        with open(self.INITIAL_CONFIG_PATH) as config:
-            request_data = config.read().strip('\n')
-            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
-
-    async def get_app_environment_data(self, app_uid: str) -> dict:
-        app_env_url = self.URLS['app_env'](app_uid)
-        response = await self.client.fetch(app_env_url, method='GET')
-        response_data = response.body.decode()
-        return json.loads(response_data)
-
-
-class ProductionUnitService(UnitService):
     async def _load_application(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
+        """Добавляет инстанс unit приложения в коллекцию приложений
+
+        :param app_uid: uid приложения
+        :param app_dirpath: путь до приложения в файловой системе
+        :param env_data: переменные среды приложения
+        """
+
         venv_dir = os.path.join(app_dirpath, 'venv')
 
         wsgi_module = env_data.get('ENTRYPOINT')
@@ -104,10 +68,87 @@ class ProductionUnitService(UnitService):
 
         log_event('registered app configuration', app_uid)
 
+    async def _remove_application(self, app_uid: str) -> None:
+        """Удаляет инстанс unit приложения из коллекции приложений
+
+        :param app_uid: uid приложения
+        """
+
+        app_url = self.URLS['application'](app_uid)
+        await self.client.fetch(app_url, method='DELETE')
+
+        log_event('unregistered application', app_uid)
+
+    @abstractmethod
+    def register_app(self, app_uid: str, environment_data: dict) -> None:
+        """Регистрирует полную конфигурацию приложения в unit
+
+        :param app_uid: uid приложения
+        :param environment_data: переменные среды приложения
+        """
+        ...
+
+    @abstractmethod
+    def unregister_app(self, app_uid: str) -> None:
+        """Удаляет полную конфигурацию приложения из unit
+
+        :param app_uid: uid приложения
+        """
+        ...
+
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
+        """Перезагружает приложение через обновление переменной среды.
+        Сейчас документация предлагает только такой способ
+
+        :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
+        """
+
+        updated_modification_ts = str(time())
+        updated_env = {
+            **new_env_data,
+            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
+        }
+
+        request_data = json.dumps(updated_env)
+        app_env_url = self.URLS['app_env'](app_uid)
+        await self.client.fetch(app_env_url, body=request_data, method='PUT')
+
+        log_event('app configuration updated', app_uid)
+
+    async def reset_configuration(self) -> None:
+        """Сбрасывает всю конфигурацию unit до дефолтного состояния"""
+
+        with open(self.INITIAL_CONFIG_PATH) as config:
+            request_data = config.read().strip('\n')
+            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
+
+    async def get_app_environment_data(self, app_uid: str) -> dict:
+        """Забирает из конфигурации переменные среды приложения
+
+        :param app_uid: uid приложения
+        :return: переменные среды приложения
+        """
+
+        app_env_url = self.URLS['app_env'](app_uid)
+        response = await self.client.fetch(app_env_url, method='GET')
+        response_data = response.body.decode()
+        return json.loads(response_data)
+
+
+class ProductionUnitService(UnitService):
     # TODO: atomicity
     async def _load_routes(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
+        """Добавляет условия, которые при выполнении перенаправляют
+        запрос нужному приложению
+
+        :param app_uid: uid приложения
+        :param app_dirpath: путь до приложения в файловой системе
+        :param env_data: переменные среды приложения
+        """
+
         static_path = env_data.get('STATIC_PATH')
         routes_url = self.URLS['routes']()
 
@@ -135,21 +176,9 @@ class ProductionUnitService(UnitService):
         log_event('registered app routing', app_uid)
 
     async def register_app(self, app_uid: str, environment_data: dict) -> None:
-        """Регистрирует приложение в файловой системе
-
-        :param app_uid: uid приложения
-        :param environment_data: переменные среды приложения
-        """
-
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         await self._load_application(app_uid, app_dirpath, environment_data)
         await self._load_routes(app_uid, app_dirpath, environment_data)
-
-    async def _remove_application(self, app_uid: str) -> None:
-        app_url = self.URLS['application'](app_uid)
-        await self.client.fetch(app_url, method='DELETE')
-
-        log_event('unregistered application', app_uid)
 
     @staticmethod
     def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
@@ -160,6 +189,12 @@ class ProductionUnitService(UnitService):
         return app_uid == deleted_app_uid
 
     async def _remove_routes(self, app_uid: str) -> None:
+        """Удаляет матчеры заданного приложения, которые
+        перенаправляют ему запросы
+
+        :param app_uid: uid приложения
+        """
+
         routes_url = self.URLS['routes']()
 
         routes_response = await self.client.fetch(routes_url, method='GET')
@@ -177,11 +212,6 @@ class ProductionUnitService(UnitService):
         log_event('unregistered routes', app_uid)
 
     async def unregister_app(self, app_uid: str) -> None:
-        """Удаляет приложение из конфигурации
-
-        :param app_uid: uid приложения
-        """
-
         await self._remove_routes(app_uid)
         await self._remove_application(app_uid)
 
