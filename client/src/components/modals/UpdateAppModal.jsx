@@ -7,7 +7,7 @@ import { actions } from "../../slices";
 import FileUploadForm from "../FileUploadForm";
 import { routes, flowStates } from "../../consts";
 
-const handleSumbit = ({
+const handleSubmit = ({
   appId,
   updateApp,
   hideModal,
@@ -50,7 +50,7 @@ const UpdateAppModal = () => {
   const updateApp = newAppData => dispatch(actions.apps.updateApp(newAppData));
 
   const { app } = useSelector(getModalInfo);
-  const sumbitProps = {
+  const submitProps = {
     appId: app.id,
     hideModal,
     setFlowState,
@@ -63,9 +63,8 @@ const UpdateAppModal = () => {
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Update application</Modal.Title>
       </Modal.Header>
-
       <Modal.Body>
-        <FileUploadForm handleSumbit={handleSumbit(sumbitProps)} />
+        <FileUploadForm handleSubmit={handleSubmit(submitProps)} />
       </Modal.Body>
     </Modal>
   );
