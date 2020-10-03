@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { Modal } from "react-bootstrap";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { actions } from "../../slices";
 import FileUploadModalBody from "./FileUploadModalBody";
@@ -11,7 +11,8 @@ const handleSubmit = ({
   addApp,
   hideModal,
   setFlowState,
-  setErrorInfo
+  setErrorInfo,
+  createDb
 }) => async event => {
   event.preventDefault();
 
@@ -19,6 +20,8 @@ const handleSubmit = ({
   setFlowState(flowStates.loading);
 
   const formData = new FormData(event.target);
+  formData.append("createDb", createDb);
+
   const url = routes.createApp();
 
   try {
@@ -35,6 +38,8 @@ const handleSubmit = ({
   }
 };
 
+const getDbCreationChoice = ({ modalInfo }) => modalInfo.createDb;
+
 const AddAppModal = () => {
   const dispatch = useDispatch();
   const addApp = app => dispatch(actions.apps.addApp(app));
@@ -44,7 +49,15 @@ const AddAppModal = () => {
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 
-  const submitProps = { addApp, hideModal, setFlowState, setErrorInfo };
+  const createDb = useSelector(getDbCreationChoice);
+
+  const submitProps = {
+    addApp,
+    hideModal,
+    setFlowState,
+    setErrorInfo,
+    createDb
+  };
 
   return (
     <Modal show onHide={hideModal} centered>

@@ -47,10 +47,10 @@ const errorSlice = createSlice({
 
 const modalInfoSlice = createSlice({
   name: "modalInfo",
-  initialState: { type: null, app: null },
+  initialState: { type: null, app: null, createDb: false },
   reducers: {
-    setModalInfo: (state, action) => action.payload,
-    hideModal: () => ({ type: null, app: null })
+    setModalInfo: (state, action) => ({ ...state, ...action.payload }),
+    hideModal: () => ({ type: null, app: null, createDb: false })
   }
 });
 
