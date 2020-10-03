@@ -9,6 +9,7 @@ import { routes, flowStates } from "../../consts";
 
 const handleSumbit = ({
   appId,
+  updateApp,
   hideModal,
   setFlowState,
   setErrorInfo
@@ -22,9 +23,13 @@ const handleSumbit = ({
   const url = routes.updateApp(appId);
 
   try {
-    await axios.put(url, formData, {
+    const response = await axios.put(url, formData, {
       headers: { "Content-Type": "multipart/form-data" }
     });
+
+    const updatedAppData = response.data;
+    updateApp(updatedAppData);
+
     setFlowState(flowStates.ready);
   } catch (error) {
     const message = error.response ? error.response.data : error.message;
@@ -42,9 +47,16 @@ const UpdateAppModal = () => {
     dispatch(actions.flowState.setState(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
+  const updateApp = newAppData => dispatch(actions.apps.updateApp(newAppData));
 
   const { app } = useSelector(getModalInfo);
-  const sumbitProps = { appId: app.id, hideModal, setFlowState, setErrorInfo };
+  const sumbitProps = {
+    appId: app.id,
+    hideModal,
+    setFlowState,
+    setErrorInfo,
+    updateApp
+  };
 
   return (
     <Modal show onHide={hideModal}>

@@ -15,6 +15,16 @@ const appSlice = createSlice({
     removeApp: (state, action) => {
       const appIdToRemove = action.payload;
       return state.filter(app => app.id !== appIdToRemove);
+    },
+    updateApp: (state, action) => {
+      const appIdToUpdate = action.payload.id;
+      const app = state.find(({ id }) => id === appIdToUpdate);
+
+      const newAppsState = state.filter(app => app.id !== appIdToUpdate);
+      const updatedApp = { ...app, ...action.payload };
+      newAppsState.push(updatedApp);
+
+      return newAppsState;
     }
   }
 });
