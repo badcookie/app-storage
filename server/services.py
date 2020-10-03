@@ -34,6 +34,19 @@ class UnitService(ABC):
             'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
         }
 
+    @staticmethod
+    def _get_lookup_paths(app_uid: str) -> List[str]:
+        app_dirpath = os.path.join(settings.apps_path, app_uid)
+        dir_paths = [
+            name
+            for name in os.listdir(app_dirpath)
+            if os.path.isdir(os.path.join(app_dirpath, name))
+        ]
+        absolute_dir_paths = [
+            os.path.abspath(os.path.join(app_dirpath, dirname)) for dirname in dir_paths
+        ]
+        return absolute_dir_paths
+
     async def _load_application(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
@@ -54,9 +67,12 @@ class UnitService(ABC):
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
 
+        lookup_paths = self._get_lookup_paths(app_uid)
+        app_paths = ':'.join(lookup_paths)
+
         app_data = {
             'type': 'python 3',
-            'path': env_data.get('PROJECT_WORKDIR') or app_dirpath,
+            'path': app_paths,
             'module': wsgi_module,
             'home': venv_dir,
             'environment': environment,
@@ -177,13 +193,8 @@ class ProductionUnitService(UnitService):
 
     async def register_app(self, app_uid: str, environment_data: dict) -> None:
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-
-        try:
-            await self._load_application(app_uid, app_dirpath, environment_data)
-            await self._load_routes(app_uid, app_dirpath, environment_data)
-        except Exception as exception:
-            await self.unregister_app(app_uid)
-            raise exception
+        await self._load_application(app_uid, app_dirpath, environment_data)
+        await self._load_routes(app_uid, app_dirpath, environment_data)
 
     @staticmethod
     def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
@@ -298,15 +309,10 @@ class DevelopmentUnitService(UnitService):
 
     async def register_app(self, app_uid: str, environment_data: dict) -> dict:
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-
-        try:
-            await self._load_application(app_uid, app_dirpath, environment_data)
-            await self._load_routes(app_uid, app_dirpath, environment_data)
-            app_port = await self._load_listener(app_uid)
-            return {'port': app_port}
-        except Exception as exception:
-            await self.unregister_app(app_uid)
-            raise exception
+        await self._load_application(app_uid, app_dirpath, environment_data)
+        await self._load_routes(app_uid, app_dirpath, environment_data)
+        app_port = await self._load_listener(app_uid)
+        return {'port': app_port}
 
     async def unregister_app(self, app_uid: str) -> None:
         await self._remove_listener(app_uid)

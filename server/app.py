@@ -103,9 +103,16 @@ class ApplicationsHandler(BaseHandler):
 
         app_uid = create_application_environment(file)
         enviroment_variables = get_app_environment_data(app_uid)
-        result_data = await self.configurator.register_app(
-            app_uid, enviroment_variables
-        )
+
+        try:
+            result_data = await self.configurator.register_app(
+                app_uid, enviroment_variables
+            )
+        except Exception as exception:
+            await self.configurator.unregister_app(app_uid)
+            destroy_application_environment(app_uid)
+            raise exception
+
         app_meta = result_data or {}
 
         app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
