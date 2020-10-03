@@ -34,19 +34,6 @@ class UnitService(ABC):
             'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
         }
 
-    @staticmethod
-    def _get_lookup_paths(app_uid: str) -> List[str]:
-        app_dirpath = os.path.join(settings.apps_path, app_uid)
-        dir_paths = [
-            name
-            for name in os.listdir(app_dirpath)
-            if os.path.isdir(os.path.join(app_dirpath, name))
-        ]
-        absolute_dir_paths = [
-            os.path.abspath(os.path.join(app_dirpath, dirname)) for dirname in dir_paths
-        ]
-        return absolute_dir_paths
-
     async def _load_application(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
@@ -67,12 +54,9 @@ class UnitService(ABC):
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
 
-        lookup_paths = self._get_lookup_paths(app_uid)
-        app_paths = ':'.join(lookup_paths)
-
         app_data = {
             'type': 'python 3',
-            'path': app_paths,
+            'path': env_data.get('PROJECT_WORKDIR') or app_dirpath,
             'module': wsgi_module,
             'home': venv_dir,
             'environment': environment,
