@@ -11,9 +11,7 @@ services:
     container_name: ${PROJECT_NAME}-unit
     command:
       ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-9000}"]
-    ports:
-      - {{ unit_port }}:9000
-      - {{ unit_apps_port }}:{{ unit_apps_port }}
+    network_mode: host
     volumes:
       - ./unit_config.json:/var/lib/unit/conf.json
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}

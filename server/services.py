@@ -9,7 +9,7 @@ from functools import partial
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
 from time import time
-from typing import List
+from typing import List, Optional
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -80,11 +80,12 @@ class UnitService(ABC):
         log_event('unregistered application', app_uid)
 
     @abstractmethod
-    def register_app(self, app_uid: str, environment_data: dict) -> None:
+    def register_app(self, app_uid: str, environment_data: dict) -> Optional[dict]:
         """Регистрирует полную конфигурацию приложения в unit
 
         :param app_uid: uid приложения
         :param environment_data: переменные среды приложения
+        :return метаданные приложения из unit
         """
         ...
 
@@ -217,11 +218,86 @@ class ProductionUnitService(UnitService):
 
 
 class DevelopmentUnitService(UnitService):
-    async def register_app(self, *args) -> None:
-        pass
+    async def _load_routes(
+        self, app_uid: str, app_dirpath: str, env_data: dict
+    ) -> None:
+        static_path = env_data.get('STATIC_PATH')
+        base_routes = [{'action': {'pass': f'applications/{app_uid}'}}]
 
-    async def unregister_app(self, *args) -> None:
-        pass
+        if not static_path:
+            routes = base_routes
+        else:
+            absolute_static_path = os.path.join(app_dirpath, static_path)
+            static_route = {
+                'match': {'uri': '/static/*'},
+                'action': {'share': absolute_static_path},
+            }
+            routes = [static_route, *base_routes]
+
+        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
+
+        await self.client.fetch(route_url, body=json.dumps(routes), method='PUT')
+
+        log_event('registered app routing', app_uid)
+
+    async def _load_listener(self, app_uid: str) -> int:
+        app_port = get_unused_port()
+
+        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
+        listener_data = {'pass': f'routes/{app_uid}'}
+
+        await self.client.fetch(
+            listener_url, body=json.dumps(listener_data), method='PUT'
+        )
+
+        log_event('listener registered on port %s', app_uid, app_port)
+
+        return app_port
+
+    @staticmethod
+    def _is_deleted_app_listener(deleted_app_uid: str, listener: dict) -> bool:
+        request_destination = listener['pass']
+        _, app_uid = request_destination.split('/')
+        return app_uid == deleted_app_uid
+
+    async def _remove_listener(self, app_uid: str) -> None:
+        listeners_url = f'{self.BASE_URL}/listeners/'
+        reponse = await self.client.fetch(listeners_url, method='GET')
+
+        response_data = reponse.body.decode()
+        listeners = json.loads(response_data)
+
+        is_deleted_app_listener = partial(self._is_deleted_app_listener, app_uid)
+        filtered_listeners = {
+            address: destination
+            for address, destination in listeners.items()
+            if not is_deleted_app_listener(destination)
+        }
+
+        await self.client.fetch(
+            listeners_url, body=json.dumps(filtered_listeners), method='PUT'
+        )
+
+        log_event('unregistered listener', app_uid)
+
+    async def _remove_routes(self, app_uid: str) -> None:
+        route_url = f'{self.BASE_URL}/routes/{app_uid}/'
+        await self.client.fetch(route_url, method='DELETE')
+
+        log_event('unregistered route', app_uid)
+
+    async def register_app(self, app_uid: str, environment_data: dict) -> dict:
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        await self._load_application(app_uid, app_dirpath, environment_data)
+        await self._load_routes(app_uid, app_dirpath, environment_data)
+        app_port = await self._load_listener(app_uid)
+
+        return {'port': app_port}
+
+    async def unregister_app(self, app_uid: str) -> None:
+        await self._remove_listener(app_uid)
+        await self._remove_routes(app_uid)
+        await self._remove_application(app_uid)
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:

@@ -15,6 +15,9 @@ setup:
 	@cd deploy
 	@ansible-playbook -i hosts local_setup.yml
 
+teardown:
+	@docker-compose down -v
+
 server:
 	@export PYTHONPATH="${PYTHONPATH}:."
 	@python server/main.py

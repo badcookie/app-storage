@@ -74,6 +74,10 @@ async def test_successful_app_lifecycle(
     app_id = app_data['id']
     app_uid = app_data['uid']
 
+    app_url = f'http://localhost:9000/config'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    print(app_response.body.decode())
+
     app_url = f'http://localhost:{app_port}/'
     app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
     response_data = app_response.body.decode()
@@ -88,7 +92,7 @@ async def test_successful_app_lifecycle(
     app_path = path.join(settings.apps_path, app_uid)
 
     saved_app = await repo.get(id=app_id)
-    assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
+    assert saved_app and saved_app.uid == app_uid
 
     assert path.exists(app_path)
 
