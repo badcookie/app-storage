@@ -75,7 +75,7 @@ class UnitService(ABC):
         """
 
         app_url = self.URLS['application'](app_uid)
-        await self.client.fetch(app_url, method='DELETE')
+        await self.client.fetch(app_url, method='DELETE', raise_error=False)
 
         log_event('unregistered application', app_uid)
 
@@ -138,7 +138,6 @@ class UnitService(ABC):
 
 
 class ProductionUnitService(UnitService):
-    # TODO: atomicity
     async def _load_routes(
         self, app_uid: str, app_dirpath: str, env_data: dict
     ) -> None:
@@ -178,8 +177,13 @@ class ProductionUnitService(UnitService):
 
     async def register_app(self, app_uid: str, environment_data: dict) -> None:
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        await self._load_application(app_uid, app_dirpath, environment_data)
-        await self._load_routes(app_uid, app_dirpath, environment_data)
+
+        try:
+            await self._load_application(app_uid, app_dirpath, environment_data)
+            await self._load_routes(app_uid, app_dirpath, environment_data)
+        except Exception as exception:
+            await self.unregister_app(app_uid)
+            raise exception
 
     @staticmethod
     def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
@@ -207,7 +211,10 @@ class ProductionUnitService(UnitService):
         filtered_routes = [route for route in routes if not is_deleted_app_route(route)]
 
         await self.client.fetch(
-            routes_url, body=json.dumps(filtered_routes), method='PUT'
+            routes_url,
+            body=json.dumps(filtered_routes),
+            method='PUT',
+            raise_error=False,
         )
 
         log_event('unregistered routes', app_uid)
@@ -275,24 +282,31 @@ class DevelopmentUnitService(UnitService):
         }
 
         await self.client.fetch(
-            listeners_url, body=json.dumps(filtered_listeners), method='PUT'
+            listeners_url,
+            body=json.dumps(filtered_listeners),
+            method='PUT',
+            raise_error=False,
         )
 
         log_event('unregistered listener', app_uid)
 
     async def _remove_routes(self, app_uid: str) -> None:
         route_url = f'{self.BASE_URL}/routes/{app_uid}/'
-        await self.client.fetch(route_url, method='DELETE')
+        await self.client.fetch(route_url, method='DELETE', raise_error=False)
 
         log_event('unregistered route', app_uid)
 
     async def register_app(self, app_uid: str, environment_data: dict) -> dict:
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        await self._load_application(app_uid, app_dirpath, environment_data)
-        await self._load_routes(app_uid, app_dirpath, environment_data)
-        app_port = await self._load_listener(app_uid)
 
-        return {'port': app_port}
+        try:
+            await self._load_application(app_uid, app_dirpath, environment_data)
+            await self._load_routes(app_uid, app_dirpath, environment_data)
+            app_port = await self._load_listener(app_uid)
+            return {'port': app_port}
+        except Exception as exception:
+            await self.unregister_app(app_uid)
+            raise exception
 
     async def unregister_app(self, app_uid: str) -> None:
         await self._remove_listener(app_uid)
