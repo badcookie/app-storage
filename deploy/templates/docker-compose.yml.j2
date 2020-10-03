@@ -36,6 +36,7 @@ services:
     image: ${PROJECT_NAME}:server
     container_name: ${PROJECT_NAME}-server
     command: python server/main.py
+    network_mode: host
     env_file:
       - .env
     volumes:
