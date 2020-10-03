@@ -4,8 +4,8 @@ import { Modal } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
-import FileUploadForm from "../FileUploadForm";
 import { routes, flowStates } from "../../consts";
+import FileUploadModalBody from "./FileUploadModalBody";
 
 const handleSubmit = ({
   appId,
@@ -63,9 +63,7 @@ const UpdateAppModal = () => {
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Update application</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <FileUploadForm handleSubmit={handleSubmit(submitProps)} />
-      </Modal.Body>
+      <FileUploadModalBody submitHandler={handleSubmit(submitProps)} />
     </Modal>
   );
 };

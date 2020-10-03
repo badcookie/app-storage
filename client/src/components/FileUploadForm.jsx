@@ -21,7 +21,7 @@ const FileUploadForm = ({ handleSubmit }) => {
           />
         </Form.Row>
       </Form.Group>
-      <Button type="submit">Submit</Button>
+      <Button type="submit">Upload</Button>
     </Form>
   );
 };
