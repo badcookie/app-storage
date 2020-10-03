@@ -34,18 +34,14 @@ class UnitService(ABC):
             'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
         }
 
-    async def _load_application(
-        self, app_uid: str, app_dirpath: str, env_data: dict
-    ) -> None:
-        """Добавляет инстанс unit приложения в коллекцию приложений
+    async def _load_application(self, app_uid: str, env_data: dict) -> None:
+        """Добавляет/обновляет инстанс unit приложения в коллекции приложений
 
         :param app_uid: uid приложения
-        :param app_dirpath: путь до приложения в файловой системе
         :param env_data: переменные среды приложения
         """
 
-        venv_dir = os.path.join(app_dirpath, 'venv')
-
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         wsgi_module = env_data.get('ENTRYPOINT')
 
         app_creation_ts = str(time())
@@ -58,7 +54,7 @@ class UnitService(ABC):
             'type': 'python 3',
             'path': env_data.get('PROJECT_WORKDIR') or app_dirpath,
             'module': wsgi_module,
-            'home': venv_dir,
+            'home': 'venv',
             'environment': environment,
             'working_directory': app_dirpath,
         }
@@ -97,26 +93,6 @@ class UnitService(ABC):
         """
         ...
 
-    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
-        """Перезагружает приложение через обновление переменной среды.
-        Сейчас документация предлагает только такой способ
-
-        :param app_uid: uid приложения
-        :param new_env_data: новая конфигурация
-        """
-
-        updated_modification_ts = str(time())
-        updated_env = {
-            **new_env_data,
-            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
-        }
-
-        request_data = json.dumps(updated_env)
-        app_env_url = self.URLS['app_env'](app_uid)
-        await self.client.fetch(app_env_url, body=request_data, method='PUT')
-
-        log_event('app configuration updated', app_uid)
-
     async def reset_configuration(self) -> None:
         """Сбрасывает всю конфигурацию unit до дефолтного состояния"""
 
@@ -138,17 +114,15 @@ class UnitService(ABC):
 
 
 class ProductionUnitService(UnitService):
-    async def _load_routes(
-        self, app_uid: str, app_dirpath: str, env_data: dict
-    ) -> None:
+    async def _load_routes(self, app_uid: str, env_data: dict) -> None:
         """Добавляет условия, которые при выполнении перенаправляют
         запрос нужному приложению
 
         :param app_uid: uid приложения
-        :param app_dirpath: путь до приложения в файловой системе
         :param env_data: переменные среды приложения
         """
 
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         static_path = env_data.get('STATIC_PATH')
         routes_url = self.URLS['routes']()
 
@@ -157,7 +131,7 @@ class ProductionUnitService(UnitService):
             static_route = {
                 'match': {
                     'host': f'{app_uid}.{settings.PROJECT_ADDRESS}',
-                    'uri': '*/static/*',
+                    'uri': '/static/*',
                 },
                 'action': {'share': absolute_static_path},
             }
@@ -176,9 +150,8 @@ class ProductionUnitService(UnitService):
         log_event('registered app routing', app_uid)
 
     async def register_app(self, app_uid: str, environment_data: dict) -> None:
-        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        await self._load_application(app_uid, app_dirpath, environment_data)
-        await self._load_routes(app_uid, app_dirpath, environment_data)
+        await self._load_application(app_uid, environment_data)
+        await self._load_routes(app_uid, environment_data)
 
     @staticmethod
     def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
@@ -218,11 +191,23 @@ class ProductionUnitService(UnitService):
         await self._remove_routes(app_uid)
         await self._remove_application(app_uid)
 
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
+        """Обновляет конфигурацию приложения в unit
+
+        :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
+        """
+
+        await self._load_application(app_uid, new_env_data)
+        await self._remove_routes(app_uid)
+        await self._load_routes(app_uid, new_env_data)
+
+        log_event('app configuration updated', app_uid)
+
 
 class DevelopmentUnitService(UnitService):
-    async def _load_routes(
-        self, app_uid: str, app_dirpath: str, env_data: dict
-    ) -> None:
+    async def _load_routes(self, app_uid: str, env_data: dict) -> None:
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
         static_path = env_data.get('STATIC_PATH')
         base_routes = [{'action': {'pass': f'applications/{app_uid}'}}]
 
@@ -292,9 +277,8 @@ class DevelopmentUnitService(UnitService):
         log_event('unregistered route', app_uid)
 
     async def register_app(self, app_uid: str, environment_data: dict) -> dict:
-        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        await self._load_application(app_uid, app_dirpath, environment_data)
-        await self._load_routes(app_uid, app_dirpath, environment_data)
+        await self._load_application(app_uid, environment_data)
+        await self._load_routes(app_uid, environment_data)
         app_port = await self._load_listener(app_uid)
         return {'port': app_port}
 
@@ -302,6 +286,18 @@ class DevelopmentUnitService(UnitService):
         await self._remove_listener(app_uid)
         await self._remove_routes(app_uid)
         await self._remove_application(app_uid)
+
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
+        """Обновляет конфигурацию приложения в unit
+
+        :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
+        """
+
+        await self._load_routes(app_uid, new_env_data)
+        await self._load_application(app_uid, new_env_data)
+
+        log_event('app configuration updated', app_uid)
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:

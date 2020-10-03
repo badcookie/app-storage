@@ -1,3 +1,4 @@
 TEST_ENV=2
 APP_NAME=My app
 APP_DESCRIPTION=Yet another nice app
+ENTRYPOINT=application

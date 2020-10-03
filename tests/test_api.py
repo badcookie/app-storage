@@ -122,6 +122,7 @@ async def test_successful_app_lifecycle(
         'TEST_ENV': '2',
         f'{APP_NAME_VARIABLE_NAME}': updated_app.name,
         f'{APP_DESCRIPTION_VARIABLE_NAME}': updated_app.description,
+        'ENTRYPOINT': 'application',
     }
     new_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
 
