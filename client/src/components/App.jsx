@@ -30,8 +30,9 @@ const renderErrorInfo = (errorInfo, resetError) => {
 };
 
 const getErrorInfo = ({ errorInfo }) => errorInfo;
-const getFlowState = ({ flowState }) => flowState;
+const getFlowState = ({ flowState }) => flowState.process;
 const getModalInfo = ({ modalInfo }) => modalInfo;
+const getFlowDetail = ({ flowState }) => flowState.detail;
 
 const App = () => {
   const dispatch = useDispatch();
@@ -43,8 +44,10 @@ const App = () => {
 
   const isLoaderActive = flowState === flowStates.loading;
 
+  const uploadDetail = useSelector(getFlowDetail);
+
   return (
-    <LoadingOverlay active={isLoaderActive} spinner>
+    <LoadingOverlay active={isLoaderActive} spinner text={uploadDetail}>
       {renderErrorInfo(errorInfo, resetError)}
       <Container className="vh-100 pt-5">
         <Row>

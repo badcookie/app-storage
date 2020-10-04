@@ -46,7 +46,7 @@ const AddAppModal = () => {
   const addApp = app => dispatch(actions.apps.addApp(app));
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 

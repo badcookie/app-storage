@@ -81,7 +81,7 @@ const Applications = () => {
 
   const addApps = apps => dispatch(actions.apps.addApps(apps));
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 

@@ -31,9 +31,14 @@ const appSlice = createSlice({
 
 const flowStateSlice = createSlice({
   name: "flowState",
-  initialState: flowStates.loading,
+  initialState: { process: flowStates.loading, detail: "" },
   reducers: {
-    setState: (state, action) => action.payload
+    setProcess: (state, action) => {
+      state.process = action.payload;
+    },
+    setDetail: (state, action) => {
+      state.detail = action.payload;
+    }
   }
 });
 

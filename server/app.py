@@ -19,6 +19,7 @@ from server.services import (
     destroy_application_environment,
     destroy_db_instance,
     get_app_environment_data,
+    log_event,
     update_application_environment,
     validate_package,
 )
@@ -28,7 +29,8 @@ from server.validation import (
     APP_NAME_VARIABLE_NAME,
     VALIDATION_RULES,
 )
-from tornado import web
+from tornado import web, websocket
+from tornado.websocket import WebSocketClosedError
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +43,20 @@ def get_db_data(env_data: dict) -> dict:
     }
 
 
+class WebSocketHandler(websocket.WebSocketHandler):
+    def open(self, *args: str, **kwargs: str) -> None:
+        self.application.connections.add(self)
+
+    def on_close(self) -> None:
+        self.application.connections.remove(self)
+
+    def check_origin(self, origin: str) -> bool:
+        return True
+
+
 class BaseHandler(web.RequestHandler):
     app_uid: Optional[str]
+    ws: Optional['WebSocketHandler']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -76,6 +90,15 @@ class BaseHandler(web.RequestHandler):
         self.set_status(500)
         await self.finish(error)
 
+    async def notify_client(self, message: str) -> None:
+        if not self.ws:
+            return
+
+        try:
+            await self.ws.write_message(message)
+        except WebSocketClosedError:
+            log_event('websocket closed')
+
 
 class ApplicationsHandler(BaseHandler):
     """
@@ -86,6 +109,15 @@ class ApplicationsHandler(BaseHandler):
 
     def prepare(self) -> None:
         self.app_uid = None
+
+        # FIXME
+        ws = [
+            sock
+            for sock in self.application.connections
+            if sock.request.remote_ip == self.request.remote_ip
+        ]
+
+        self.ws = ws[0] if ws else None
 
     async def get(self, app_id: Optional[str] = None):
         if app_id is None:
@@ -140,6 +172,8 @@ class ApplicationsHandler(BaseHandler):
 
         validate_package(file, VALIDATION_RULES)
 
+        await self.ws.write_message('Creating application environment')
+
         self.app_uid = create_application_environment(file)
         enviroment_variables = get_app_environment_data(self.app_uid)
 
@@ -148,8 +182,13 @@ class ApplicationsHandler(BaseHandler):
         create_db = self._get_db_option()
         if create_db:
             db_data = get_db_data(enviroment_variables)
+
+            await self.ws.write_message('Creating db instance')
+
             container_id = create_db_instance(self.docker, db_data)
             app_meta.update(db_container_id=container_id)
+
+        await self.ws.write_message('Registering app configuration')
 
         result_data = await self.configurator.register_app(
             self.app_uid, enviroment_variables
@@ -185,8 +224,13 @@ class ApplicationsHandler(BaseHandler):
 
         self.app_uid = app_to_update.uid
 
+        await self.ws.write_message('Updating application environment')
+
         await update_application_environment(app_to_update.uid, file)
         enviroment_variables = get_app_environment_data(self.app_uid)
+
+        await self.ws.write_message('Reloading app configuration')
+
         await self.configurator.reload_app(self.app_uid, enviroment_variables)
 
         data_to_update = {
@@ -211,16 +255,27 @@ class ApplicationsHandler(BaseHandler):
         uid = app_to_delete.uid
 
         if app_to_delete.db_container_id is not None:
+            await self.ws.write_message('Destroying db instance')
+
             destroy_db_instance(self.docker, app_to_delete.db_container_id)
 
+        await self.ws.write_message('Unregistering app configuration')
+
         await self.configurator.unregister_app(uid)
+
+        await self.ws.write_message('Destroying app environment')
+
         destroy_application_environment(uid)
         await self.repository.delete(id=app_id)
 
         self.set_status(204)
 
 
-def make_app(options) -> 'web.Application':
+class AppStorageApplication(web.Application):
+    connections = set()
+
+
+def make_app(options) -> 'AppStorageApplication':
     static_path = path.join(settings.BASE_DIR, 'client', 'build', 'static')
     template_path = path.join(settings.BASE_DIR, 'client', 'build')
 
@@ -229,8 +284,9 @@ def make_app(options) -> 'web.Application':
     routes = [
         (r'/applications/', ApplicationsHandler),
         (r'/applications/([^/]+)/?', ApplicationsHandler),
+        (r'/ws/', WebSocketHandler),
     ]
 
-    return web.Application(
+    return AppStorageApplication(
         routes, static_path=static_path, template_path=template_path, **options,
     )

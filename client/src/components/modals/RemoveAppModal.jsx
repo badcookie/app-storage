@@ -35,7 +35,7 @@ const RemoveAppModal = () => {
   const removeApp = appId => dispatch(actions.apps.removeApp(appId));
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 

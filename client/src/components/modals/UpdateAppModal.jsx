@@ -44,7 +44,7 @@ const UpdateAppModal = () => {
   const dispatch = useDispatch();
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
   const updateApp = newAppData => dispatch(actions.apps.updateApp(newAppData));

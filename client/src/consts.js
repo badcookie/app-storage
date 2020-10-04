@@ -14,7 +14,8 @@ export const routes = {
   visitApp: app =>
     env === "development"
       ? `http://${apiHost}:${app.port}/`
-      : `http://${app.uid}.app-storage.xyz`
+      : `http://${app.uid}.app-storage.xyz`,
+  ws: () => `ws://${apiHost}:${apiPort}/ws/`
 };
 
 export const flowStates = {
