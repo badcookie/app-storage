@@ -461,7 +461,7 @@ async def update_application_environment(app_uid: str, package: 'ZipFile') -> No
     log_event('virtual environment updated', app_uid)
 
 
-def log_event(message: str, app_uid: str, *args):
+def log_event(message: str, app_uid: Optional[str] = None, *args):
     extra_args = {'app_uid': app_uid}
     if args:
         logging.info(message, *args, extra=extra_args)
@@ -480,13 +480,22 @@ def create_db_instance(client: 'DockerClient', env_data: dict) -> str:
     db_password = env_data.get('DB_PASSWORD')
 
     postgres_image = client.images.pull('postgres:latest')
+
+    log_event('pulling image')
+
     container = client.containers.create(
         image=postgres_image,
         auto_remove=True,
         ports={5432: db_port},
         environment={'POSTGRES_USER': db_user, 'POSTGRES_PASSWORD': db_password},
     )
+
+    log_event('created db container')
+
     container.start()
+
+    log_event('started container')
+
     return container.id
 
 

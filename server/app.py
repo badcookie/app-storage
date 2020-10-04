@@ -33,6 +33,14 @@ from tornado import web
 logger = logging.getLogger(__name__)
 
 
+def get_db_data(env_data: dict) -> dict:
+    return {
+        'DB_PORT': env_data.get('DB_PORT', 5432),
+        'DB_PASSWORD': env_data.get('DB_PASSWORD'),
+        'DB_USER': env_data.get('DB_USER'),
+    }
+
+
 class BaseHandler(web.RequestHandler):
     app_uid: Optional[str]
 
@@ -139,7 +147,8 @@ class ApplicationsHandler(BaseHandler):
 
         create_db = self._get_db_option()
         if create_db:
-            container_id = create_db_instance(self.docker, enviroment_variables)
+            db_data = get_db_data(enviroment_variables)
+            container_id = create_db_instance(self.docker, db_data)
             app_meta.update(db_container_id=container_id)
 
         result_data = await self.configurator.register_app(
