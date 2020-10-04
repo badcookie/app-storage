@@ -8,7 +8,7 @@
     - name: setup env files
       template:
         src: "{{ templates_path }}/{{ item }}.j2"
-        dest: "{{ project_dir }}/{{ item }}"
+        dest: "{{ project_path }}/{{ item }}"
       with_items:
         - ".env"
         - "ui.Dockerfile"
