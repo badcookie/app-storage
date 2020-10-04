@@ -469,3 +469,7 @@ def log_event(message: str, app_uid: str, *args):
 def get_unit_service_from_env() -> 'UnitService':
     is_production = settings.ENVIRONMENT == Environment.PRODUCTION
     return ProductionUnitService() if is_production else DevelopmentUnitService()
+
+
+def create_db_instance() -> str:
+    pass

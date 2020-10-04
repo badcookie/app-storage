@@ -15,6 +15,7 @@ from server.errors import (
 )
 from server.services import (
     create_application_environment,
+    create_db_instance,
     destroy_application_environment,
     get_app_environment_data,
     update_application_environment,
@@ -27,20 +28,8 @@ from server.validation import (
     VALIDATION_RULES,
 )
 from tornado import web
-from tornado.httputil import HTTPServerRequest
 
 logger = logging.getLogger(__name__)
-
-
-def get_request_file(request: 'HTTPServerRequest') -> Optional['ZipFile']:
-    files = request.files
-    file_data = files.get('zipfile')
-
-    if not file_data:
-        return None
-
-    file_body = file_data[0]['body']
-    return ZipFile(BytesIO(file_body), 'r')
 
 
 class BaseHandler(web.RequestHandler):
@@ -89,12 +78,38 @@ class ApplicationsHandler(BaseHandler):
         result = json.dumps(query_data)
         return self.write(result)
 
+    def _get_request_file(self) -> Optional['ZipFile']:
+        files = self.request.files
+        file_data = files.get('zipfile')
+
+        if not file_data:
+            return None
+
+        file_body = file_data[0].get('body')
+
+        if file_body is None:
+            return None
+
+        return ZipFile(BytesIO(file_body), 'r')
+
+    def _get_db_option(self) -> bool:
+        request_data = self.request.body_arguments.get('options')
+
+        if not request_data:
+            return False
+
+        decoded_options = request_data[0].decode()
+        options = json.loads(decoded_options)
+
+        create_db = options.get('createDb', False)
+        return create_db
+
     @handle_internal_error
     async def post(self, param=None):
         if param is not None:
             raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
-        file = get_request_file(self.request)
+        file = self._get_request_file()
 
         if not file:
             raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
@@ -118,6 +133,12 @@ class ApplicationsHandler(BaseHandler):
         app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
         app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
 
+        create_db = self._get_db_option()
+
+        if create_db:
+            container_id = create_db_instance()
+            app_meta.update(db_container_id=container_id)
+
         app = Application(
             uid=app_uid, name=app_name, description=app_description, **app_meta
         )
@@ -132,7 +153,7 @@ class ApplicationsHandler(BaseHandler):
         if app_id is None:
             raise web.HTTPError(400, reason=RESOURCE_ID_EXPECTED_MESSAGE)
 
-        file = get_request_file(self.request)
+        file = self._get_request_file()
 
         if not file:
             raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)

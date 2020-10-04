@@ -20,7 +20,8 @@ const handleSubmit = ({
   setFlowState(flowStates.loading);
 
   const formData = new FormData(event.target);
-  formData.append("createDb", createDb);
+  const options = { createDb };
+  formData.append("options", JSON.stringify(options));
 
   const url = routes.createApp();
 
