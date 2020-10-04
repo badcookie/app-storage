@@ -175,13 +175,13 @@ class ApplicationsHandler(BaseHandler):
         await self.ws.write_message('Creating application environment')
 
         self.app_uid = create_application_environment(file)
-        enviroment_variables = get_app_environment_data(self.app_uid)
+        environment_variables = get_app_environment_data(self.app_uid)
 
         app_meta = {}
 
         create_db = self._get_db_option()
         if create_db:
-            db_data = get_db_data(enviroment_variables)
+            db_data = get_db_data(environment_variables)
 
             await self.ws.write_message('Creating db instance')
 
@@ -191,12 +191,12 @@ class ApplicationsHandler(BaseHandler):
         await self.ws.write_message('Registering app configuration')
 
         result_data = await self.configurator.register_app(
-            self.app_uid, enviroment_variables
+            self.app_uid, environment_variables
         )
         app_meta.update(**(result_data or {}))
 
-        app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
-        app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
+        app_name = environment_variables.get(APP_NAME_VARIABLE_NAME)
+        app_description = environment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
 
         app = Application(
             uid=self.app_uid, name=app_name, description=app_description, **app_meta
@@ -227,15 +227,15 @@ class ApplicationsHandler(BaseHandler):
         await self.ws.write_message('Updating application environment')
 
         await update_application_environment(app_to_update.uid, file)
-        enviroment_variables = get_app_environment_data(self.app_uid)
+        environment_variables = get_app_environment_data(self.app_uid)
 
         await self.ws.write_message('Reloading app configuration')
 
-        await self.configurator.reload_app(self.app_uid, enviroment_variables)
+        await self.configurator.reload_app(self.app_uid, environment_variables)
 
         data_to_update = {
-            'name': enviroment_variables.get(APP_NAME_VARIABLE_NAME),
-            'description': enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME),
+            'name': environment_variables.get(APP_NAME_VARIABLE_NAME),
+            'description': environment_variables.get(APP_DESCRIPTION_VARIABLE_NAME),
         }
         updated_app = await self.repository.update(app_id, data_to_update)
 
