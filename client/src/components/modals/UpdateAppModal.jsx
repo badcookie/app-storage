@@ -59,11 +59,14 @@ const UpdateAppModal = () => {
   };
 
   return (
-    <Modal show onHide={hideModal}>
+    <Modal show onHide={hideModal} size="lg">
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Update application</Modal.Title>
       </Modal.Header>
-      <FileUploadModalBody submitHandler={handleSubmit(submitProps)} />
+      <FileUploadModalBody
+        submitHandler={handleSubmit(submitProps)}
+        showDbOption={false}
+      />
     </Modal>
   );
 };

@@ -65,7 +65,10 @@ const AddAppModal = () => {
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Add application</Modal.Title>
       </Modal.Header>
-      <FileUploadModalBody submitHandler={handleSubmit(submitProps)} />
+      <FileUploadModalBody
+        submitHandler={handleSubmit(submitProps)}
+        showDbOption={true}
+      />
     </Modal>
   );
 };

@@ -10,7 +10,22 @@ const handleCheck = setDbCreationChoice => event => {
   setDbCreationChoice(createDb);
 };
 
-const AppForm = ({ handleSubmit }) => {
+const renderDbOptionCheck = (showDbOption, setDbCreationChoice) => {
+  if (!showDbOption) {
+    return null;
+  }
+  return (
+    <Form.Group controlId="formBasicCheckbox">
+      <Form.Check
+        type="checkbox"
+        label="Create PostgreSQL instance"
+        onChange={handleCheck(setDbCreationChoice)}
+      />
+    </Form.Group>
+  );
+};
+
+const AppForm = ({ handleSubmit, showDbOption }) => {
   const dispatch = useDispatch();
   const setDbCreationChoice = createDb =>
     dispatch(actions.modalInfo.setModalInfo({ createDb }));
@@ -33,13 +48,7 @@ const AppForm = ({ handleSubmit }) => {
           />
         </Form.Row>
       </Form.Group>
-      <Form.Group controlId="formBasicCheckbox">
-        <Form.Check
-          type="checkbox"
-          label="Create PostgreSQL instance"
-          onChange={handleCheck(setDbCreationChoice)}
-        />
-      </Form.Group>
+      {renderDbOptionCheck(showDbOption, setDbCreationChoice)}
       <Button type="submit">Upload</Button>
     </Form>
   );

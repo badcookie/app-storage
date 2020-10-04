@@ -1,9 +1,9 @@
-import { Modal, Tabs, Tab, Row, Col, Nav } from "react-bootstrap";
+import { Modal, Tab, Row, Col, Nav } from "react-bootstrap";
 import AppForm from "../AppForm";
 import AppUploadHelpCards from "../AppUploadHelpCards";
 import React from "react";
 
-const FileUploadModalBody = ({ submitHandler }) => {
+const FileUploadModalBody = ({ submitHandler, showDbOption }) => {
   return (
     <Modal.Body>
       <Tab.Container defaultActiveKey="form">
@@ -23,7 +23,10 @@ const FileUploadModalBody = ({ submitHandler }) => {
           <Col>
             <Tab.Content>
               <Tab.Pane eventKey="form">
-                <AppForm handleSubmit={submitHandler} />
+                <AppForm
+                  handleSubmit={submitHandler}
+                  showDbOption={showDbOption}
+                />
               </Tab.Pane>
               <Tab.Pane eventKey="help">
                 <AppUploadHelpCards />
