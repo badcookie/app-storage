@@ -8,9 +8,7 @@
     - name: setup env files
       template:
         src: "{{ templates_path }}/{{ item }}.j2"
-        dest: "{{ project_path }}/{{ item }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        dest: "{{ project_dir }}/{{ item }}"
       with_items:
         - ".env"
         - "ui.Dockerfile"

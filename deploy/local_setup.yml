@@ -14,8 +14,6 @@
       template:
         src: "{{ templates_path }}/{{ item }}.j2"
         dest: "{{ project_path }}/{{ item }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
       with_items:
         - ".env"
         - "ui.Dockerfile"
