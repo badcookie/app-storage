@@ -17,6 +17,7 @@ from server.services import (
     create_application_environment,
     create_db_instance,
     destroy_application_environment,
+    destroy_db_instance,
     get_app_environment_data,
     update_application_environment,
     validate_package,
@@ -33,10 +34,13 @@ logger = logging.getLogger(__name__)
 
 
 class BaseHandler(web.RequestHandler):
+    app_uid: Optional[str]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.repository = self.application.settings['repository']
         self.configurator = self.application.settings['configurator']
+        self.docker = self.application.settings['docker']
 
     def set_default_headers(self) -> None:
         self.set_header('Access-Control-Allow-Origin', '*')
@@ -48,13 +52,21 @@ class BaseHandler(web.RequestHandler):
         self.set_status(200)
         self.finish()
 
-    def handle_client_error(self, status: int, error: str) -> None:
-        self.set_status(status)
-        self.finish(error)
+    async def handle_client_error(self, status: int, error: str) -> None:
+        if self.app_uid is not None:
+            await self.configurator.unregister_app(self.app_uid)
+            destroy_application_environment(self.app_uid)
 
-    def handle_internal_error(self, error: str) -> None:
+        self.set_status(status)
+        await self.finish(error)
+
+    async def handle_internal_error(self, error: str) -> None:
+        if self.app_uid is not None:
+            await self.configurator.unregister_app(self.app_uid)
+            destroy_application_environment(self.app_uid)
+
         self.set_status(500)
-        self.finish(error)
+        await self.finish(error)
 
 
 class ApplicationsHandler(BaseHandler):
@@ -64,12 +76,16 @@ class ApplicationsHandler(BaseHandler):
     и сохраняет в бд данные о приложении.
     """
 
+    def prepare(self) -> None:
+        self.app_uid = None
+
     async def get(self, app_id: Optional[str] = None):
         if app_id is None:
             apps = await self.repository.list()
             query_data = [app.dict() for app in apps]
         else:
             app = await self.repository.get(id=app_id)
+            self.app_uid = app.uid
             query_data = app.dict()
 
         if query_data is None:
@@ -116,31 +132,26 @@ class ApplicationsHandler(BaseHandler):
 
         validate_package(file, VALIDATION_RULES)
 
-        app_uid = create_application_environment(file)
-        enviroment_variables = get_app_environment_data(app_uid)
+        self.app_uid = create_application_environment(file)
+        enviroment_variables = get_app_environment_data(self.app_uid)
 
-        try:
-            result_data = await self.configurator.register_app(
-                app_uid, enviroment_variables
-            )
-        except Exception as exception:
-            await self.configurator.unregister_app(app_uid)
-            destroy_application_environment(app_uid)
-            raise exception
+        app_meta = {}
 
-        app_meta = result_data or {}
+        create_db = self._get_db_option()
+        if create_db:
+            container_id = create_db_instance(self.docker, enviroment_variables)
+            app_meta.update(db_container_id=container_id)
+
+        result_data = await self.configurator.register_app(
+            self.app_uid, enviroment_variables
+        )
+        app_meta.update(**(result_data or {}))
 
         app_name = enviroment_variables.get(APP_NAME_VARIABLE_NAME)
         app_description = enviroment_variables.get(APP_DESCRIPTION_VARIABLE_NAME)
 
-        create_db = self._get_db_option()
-
-        if create_db:
-            container_id = create_db_instance()
-            app_meta.update(db_container_id=container_id)
-
         app = Application(
-            uid=app_uid, name=app_name, description=app_description, **app_meta
+            uid=self.app_uid, name=app_name, description=app_description, **app_meta
         )
         app_id = await self.repository.add(app)
         app_data = {'id': app_id, **app.dict()}
@@ -163,11 +174,11 @@ class ApplicationsHandler(BaseHandler):
         if app_to_update is None:
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
-        app_uid = app_to_update.uid
+        self.app_uid = app_to_update.uid
 
         await update_application_environment(app_to_update.uid, file)
-        enviroment_variables = get_app_environment_data(app_uid)
-        await self.configurator.reload_app(app_uid, enviroment_variables)
+        enviroment_variables = get_app_environment_data(self.app_uid)
+        await self.configurator.reload_app(self.app_uid, enviroment_variables)
 
         data_to_update = {
             'name': enviroment_variables.get(APP_NAME_VARIABLE_NAME),
@@ -189,6 +200,7 @@ class ApplicationsHandler(BaseHandler):
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
         uid = app_to_delete.uid
+        destroy_db_instance(self.docker, app_to_delete.db_container_id)
 
         await self.configurator.unregister_app(uid)
         destroy_application_environment(uid)

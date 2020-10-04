@@ -9,7 +9,7 @@ from functools import partial
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
 from time import time
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -17,6 +17,9 @@ from server.errors import ApplicationInitError
 from server.settings import Environment, settings
 from server.validation import ENV_FILE_NAME, REQUIREMENTS_FILE_NAME
 from tornado.httpclient import AsyncHTTPClient
+
+if TYPE_CHECKING:
+    from docker import DockerClient
 
 
 class UnitService(ABC):
@@ -471,5 +474,23 @@ def get_unit_service_from_env() -> 'UnitService':
     return ProductionUnitService() if is_production else DevelopmentUnitService()
 
 
-def create_db_instance() -> str:
-    pass
+def create_db_instance(client: 'DockerClient', env_data: dict) -> str:
+    db_port = env_data.get('DB_PORT', 5432)
+    db_user = env_data.get('DB_USER')
+    db_password = env_data.get('DB_PASSWORD')
+
+    postgres_image = client.images.pull('postgres:latest')
+    container = client.containers.create(
+        image=postgres_image,
+        auto_remove=True,
+        ports={5432: db_port},
+        environment={'POSTGRES_USER': db_user, 'POSTGRES_PASSWORD': db_password},
+    )
+    container.start()
+    return container.id
+
+
+def destroy_db_instance(client: 'DockerClient', container_id: str) -> None:
+    container = client.containers.get(container_id)
+    if container:
+        container.stop()

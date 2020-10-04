@@ -1,5 +1,6 @@
 import logging
 
+import docker
 from motor.motor_tornado import MotorClient
 from server.app import make_app
 from server.repository import ApplicationRepository
@@ -12,11 +13,13 @@ def init_app_options() -> dict:
     db = MotorClient(settings.DB.dsn).default
     debug = settings.ENVIRONMENT == Environment.DEVELOPMENT
     configurator = get_unit_service_from_env()
+    docker_client = docker.from_env()
 
     return {
         'debug': debug,
         'repository': ApplicationRepository(db),
         'configurator': configurator,
+        'docker': docker_client,
     }
 
 

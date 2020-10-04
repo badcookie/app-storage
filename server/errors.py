@@ -49,10 +49,12 @@ def handle_internal_error(func) -> Callable:
         except Exception as error:
             if isinstance(error, (HTTPError, AppStorageException)):
                 message = error.reason
-                handler.handle_client_error(status=error.status_code, error=message)
+                await handler.handle_client_error(
+                    status=error.status_code, error=message
+                )
             else:
                 message = error
-                handler.handle_internal_error(error=str(message))
+                await handler.handle_internal_error(error=str(message))
 
             logging.error(message, exc_info=True)
 

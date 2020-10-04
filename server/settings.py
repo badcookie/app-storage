@@ -15,7 +15,7 @@ class Environment(str):
 
 class AppFilter(logging.Filter):
     def filter(self, record):
-        if not hasattr(record, 'app_uid'):
+        if not hasattr(record, 'app_uid') or record.app_uid is None:
             record.app_uid = '-'
         return True
 

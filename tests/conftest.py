@@ -103,7 +103,11 @@ class TestRepository(Repository):
 
 def init_app_options():
     db = []
-    return {'repository': TestRepository(db), 'configurator': DevelopmentUnitService()}
+    return {
+        'repository': TestRepository(db),
+        'configurator': DevelopmentUnitService(),
+        'docker': None,
+    }
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@ class Application(Entity):
     name: Optional[str]
     description: Optional[str]
     port: Optional[int]
+    db_container_id: Optional[str]
 
 
 class ApplicationReadOnly(Application):
