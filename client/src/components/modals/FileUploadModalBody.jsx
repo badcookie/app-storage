@@ -1,6 +1,6 @@
 import { Modal, Tabs, Tab, Row, Col, Nav } from "react-bootstrap";
-import FileUploadForm from "../FileUploadForm";
-import FileUploadTooltip from "../FileUploadTooltip";
+import AppForm from "../AppForm";
+import AppUploadHelpCards from "../AppUploadHelpCards";
 import React from "react";
 
 const FileUploadModalBody = ({ submitHandler }) => {
@@ -11,7 +11,7 @@ const FileUploadModalBody = ({ submitHandler }) => {
           <Col>
             <Nav variant="tabs" className="flex-row">
               <Nav.Item>
-                <Nav.Link eventKey="form">Form</Nav.Link>
+                <Nav.Link eventKey="form">Upload</Nav.Link>
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link eventKey="help">Help</Nav.Link>
@@ -23,24 +23,15 @@ const FileUploadModalBody = ({ submitHandler }) => {
           <Col>
             <Tab.Content>
               <Tab.Pane eventKey="form">
-                <FileUploadForm handleSubmit={submitHandler} />
+                <AppForm handleSubmit={submitHandler} />
               </Tab.Pane>
               <Tab.Pane eventKey="help">
-                <FileUploadTooltip />
+                <AppUploadHelpCards />
               </Tab.Pane>
             </Tab.Content>
           </Col>
         </Row>
       </Tab.Container>
-
-      {/*<Tabs defaultActiveKey="form">*/}
-      {/*  <Tab eventKey="form" title="Form">*/}
-      {/*    <FileUploadForm handleSubmit={submitHandler} />*/}
-      {/*  </Tab>*/}
-      {/*  <Tab eventKey="help" title="Help">*/}
-      {/*    <FileUploadTooltip />*/}
-      {/*  </Tab>*/}
-      {/*</Tabs>*/}
     </Modal.Body>
   );
 };

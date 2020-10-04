@@ -10,7 +10,7 @@ const handleCheck = setDbCreationChoice => event => {
   setDbCreationChoice(createDb);
 };
 
-const FileUploadForm = ({ handleSubmit }) => {
+const AppForm = ({ handleSubmit }) => {
   const dispatch = useDispatch();
   const setDbCreationChoice = createDb =>
     dispatch(actions.modalInfo.setModalInfo({ createDb }));
@@ -25,7 +25,7 @@ const FileUploadForm = ({ handleSubmit }) => {
         <Form.Row>
           <Form.File
             id="custom-file"
-            label="Upload file"
+            label="..."
             accept=".zip"
             name="zipfile"
             custom
@@ -45,4 +45,4 @@ const FileUploadForm = ({ handleSubmit }) => {
   );
 };
 
-export default FileUploadForm;
+export default AppForm;

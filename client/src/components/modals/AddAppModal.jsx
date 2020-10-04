@@ -60,9 +60,9 @@ const AddAppModal = () => {
   };
 
   return (
-    <Modal show onHide={hideModal} centered>
+    <Modal show onHide={hideModal} centered size="lg">
       <Modal.Header closeButton onHide={hideModal}>
-        <Modal.Title>Load application</Modal.Title>
+        <Modal.Title>Add application</Modal.Title>
       </Modal.Header>
       <FileUploadModalBody submitHandler={handleSubmit(submitProps)} />
     </Modal>
