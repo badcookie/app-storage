@@ -503,3 +503,4 @@ def destroy_db_instance(client: 'DockerClient', container_id: str) -> None:
     container = client.containers.get(container_id)
     if container:
         container.stop()
+        log_event('destroyed db container')
