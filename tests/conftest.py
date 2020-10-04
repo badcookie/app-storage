@@ -1,5 +1,6 @@
 import os
 import shutil
+import docker
 from typing import TYPE_CHECKING, List, Optional, Union
 from uuid import uuid4
 from zipfile import ZipFile
@@ -106,7 +107,7 @@ def init_app_options():
     return {
         'repository': TestRepository(db),
         'configurator': DevelopmentUnitService(),
-        'docker': None,
+        'docker': docker.from_env(),
     }
 
 

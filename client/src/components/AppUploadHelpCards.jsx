@@ -27,17 +27,23 @@ const AppUploadHelpCards = () => (
       <Card.Body>
         <pre>
           <samp>
-            ENTRYPOINT=bikes.wsgi # required
+            ENTRYPOINT=bikes.wsgi     # required
             <br />
-            PROJECT_WORKDIR=bikes # project root if exists
+            PROJECT_WORKDIR=bikes     # project root if exists
             <br />
-            STATIC_PATH=bikes # slashed path to static directory (!)
+            STATIC_PATH=bikes/static/         # path to static files
             <br />
             APP_NAME=T100
             <br />
             APP_DESCRIPTION=Hacks internet
             <br />
-            DJANGO_SETTINGS_MODULE=bikes.settings # app specific settings
+            DB_PORT=6345              # required if create db option is chosen
+            <br />
+            DB_USER=user              # required if create db option is chosen
+            <br />
+            DB_PASSWORD=pass          # required if create db option is chosen
+            <br />
+            DJANGO_SETTINGS_MODULE=bikes.settings     # app specific settings
           </samp>
         </pre>
       </Card.Body>

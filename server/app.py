@@ -200,7 +200,9 @@ class ApplicationsHandler(BaseHandler):
             raise web.HTTPError(404, reason=APP_NOT_FOUND_MESSAGE)
 
         uid = app_to_delete.uid
-        destroy_db_instance(self.docker, app_to_delete.db_container_id)
+
+        if app_to_delete.db_container_id is not None:
+            destroy_db_instance(self.docker, app_to_delete.db_container_id)
 
         await self.configurator.unregister_app(uid)
         destroy_application_environment(uid)
