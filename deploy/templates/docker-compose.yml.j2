@@ -13,7 +13,7 @@ services:
       ["unitd", "--no-daemon", "--control", "*:${UNIT_PORT:-9000}"]
     network_mode: host
     volumes:
-      - {% if develop -%} ./unit_config.json {%- else -%} unit {%- endif -%}:/var/lib/unit/conf.json
+      - {% if develop -%} ./unit_config.json {%- else -%} apps {%- endif -%}:/var/lib/unit/conf.json
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
 
   db:
@@ -52,7 +52,4 @@ services:
 
 volumes:
   db: {}
-{% if not develop %}
-  apps: {}
-  unit: {}
-{% endif %}
+  {% if not develop %}apps: {}{% endif %}
