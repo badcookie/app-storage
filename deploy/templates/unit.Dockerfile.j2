@@ -1,5 +1,3 @@
 FROM nginx/unit:1.19.0-python3.7
 
-COPY ./unit_config.json /var/lib/unit/conf.json
-
 EXPOSE {{ unit_port }} {{ unit_apps_port }}
