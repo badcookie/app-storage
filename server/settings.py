@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     )
     MOUNTED_APPS_PATH: str
 
+    CLIENT_UID_HEADER: str = 'x-client'
+
     @property
     def logging(self) -> dict:
         return {

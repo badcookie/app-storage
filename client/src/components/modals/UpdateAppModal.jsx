@@ -1,10 +1,15 @@
-import React from "react";
 import axios from "axios";
 import { Modal } from "react-bootstrap";
+import React, { useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
-import { routes, flowStates } from "../../consts";
+import {
+  routes,
+  flowStates,
+  ClientContext,
+  clientUidHeader
+} from "../../consts";
 import FileUploadModalBody from "./FileUploadModalBody";
 
 const handleSubmit = ({
@@ -12,7 +17,8 @@ const handleSubmit = ({
   updateApp,
   hideModal,
   setFlowState,
-  setErrorInfo
+  setErrorInfo,
+  clientUid
 }) => async event => {
   event.preventDefault();
 
@@ -24,7 +30,10 @@ const handleSubmit = ({
 
   try {
     const response = await axios.put(url, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: {
+        "Content-Type": "multipart/form-data",
+        [clientUidHeader]: clientUid
+      }
     });
 
     const updatedAppData = response.data;
@@ -49,13 +58,16 @@ const UpdateAppModal = () => {
     dispatch(actions.errorInfo.setErrorInfo(errorData));
   const updateApp = newAppData => dispatch(actions.apps.updateApp(newAppData));
 
+  const clientUid = useContext(ClientContext);
+
   const { app } = useSelector(getModalInfo);
   const submitProps = {
     appId: app.id,
     hideModal,
     setFlowState,
     setErrorInfo,
-    updateApp
+    updateApp,
+    clientUid
   };
 
   return (

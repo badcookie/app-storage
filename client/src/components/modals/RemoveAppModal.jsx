@@ -1,17 +1,23 @@
-import React from "react";
 import axios from "axios";
+import React, { useContext } from "react";
 import { Modal, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
-import { routes, flowStates } from "../../consts";
+import {
+  routes,
+  flowStates,
+  clientUidHeader,
+  ClientContext
+} from "../../consts";
 
 const handleSubmit = ({
   appId,
   removeApp,
   hideModal,
   setFlowState,
-  setErrorInfo
+  setErrorInfo,
+  clientUid
 }) => async () => {
   hideModal();
   setFlowState(flowStates.loading);
@@ -19,7 +25,7 @@ const handleSubmit = ({
   const url = routes.deleteApp(appId);
 
   try {
-    await axios.delete(url);
+    await axios.delete(url, { headers: { [clientUidHeader]: clientUid } });
     removeApp(appId);
     setFlowState(flowStates.ready);
   } catch (error) {
@@ -39,13 +45,16 @@ const RemoveAppModal = () => {
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 
+  const clientUid = useContext(ClientContext);
+
   const { app } = useSelector(getModalInfo);
-  const sumbitProps = {
+  const submitProps = {
     appId: app.id,
     removeApp,
     hideModal,
     setFlowState,
-    setErrorInfo
+    setErrorInfo,
+    clientUid
   };
 
   return (
@@ -57,7 +66,7 @@ const RemoveAppModal = () => {
       <Modal.Body>Are you sure?</Modal.Body>
 
       <Modal.Footer>
-        <Button variant="primary" onClick={handleSubmit(sumbitProps)}>
+        <Button variant="primary" onClick={handleSubmit(submitProps)}>
           Yes
         </Button>
       </Modal.Footer>

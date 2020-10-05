@@ -1,18 +1,24 @@
-import React from "react";
 import axios from "axios";
 import { Modal } from "react-bootstrap";
+import React, { useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { actions } from "../../slices";
 import FileUploadModalBody from "./FileUploadModalBody";
-import { routes, flowStates } from "../../consts";
+import {
+  routes,
+  flowStates,
+  ClientContext,
+  clientUidHeader
+} from "../../consts";
 
 const handleSubmit = ({
   addApp,
   hideModal,
   setFlowState,
   setErrorInfo,
-  createDb
+  createDb,
+  clientUid
 }) => async event => {
   event.preventDefault();
 
@@ -27,7 +33,10 @@ const handleSubmit = ({
 
   try {
     const response = await axios.post(url, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: {
+        "Content-Type": "multipart/form-data",
+        [clientUidHeader]: clientUid
+      }
     });
     const app = response.data;
     addApp(app);
@@ -52,12 +61,15 @@ const AddAppModal = () => {
 
   const createDb = useSelector(getDbCreationChoice);
 
+  const clientUid = useContext(ClientContext);
+
   const submitProps = {
     addApp,
     hideModal,
     setFlowState,
     setErrorInfo,
-    createDb
+    createDb,
+    clientUid
   };
 
   return (

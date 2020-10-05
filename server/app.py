@@ -44,11 +44,20 @@ def get_db_data(env_data: dict) -> dict:
 
 
 class WebSocketHandler(websocket.WebSocketHandler):
+    uid: str
+
     def open(self, *args: str, **kwargs: str) -> None:
-        self.application.connections.add(self)
+        query_param = self.request.query_arguments.get('client')
+        if not query_param:
+            return
+
+        client_uid = query_param[0].decode()
+        self.uid = client_uid
+
+        self.application.ws_connections.add(self)
 
     def on_close(self) -> None:
-        self.application.connections.remove(self)
+        self.application.ws_connections.remove(self)
 
     def check_origin(self, origin: str) -> bool:
         return True
@@ -69,6 +78,7 @@ class BaseHandler(web.RequestHandler):
         self.set_header(
             'Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE, OPTIONS'
         )
+        self.set_header('Access-Control-Allow-Headers', settings.CLIENT_UID_HEADER)
 
     def options(self, *args, **kwargs):
         self.set_status(200)
@@ -110,14 +120,11 @@ class ApplicationsHandler(BaseHandler):
     def prepare(self) -> None:
         self.app_uid = None
 
-        # FIXME
-        ws = [
-            sock
-            for sock in self.application.connections
-            if sock.request.remote_ip == self.request.remote_ip
+        client_uid = self.request.headers.get(settings.CLIENT_UID_HEADER)
+        found_ws = [
+            ws for ws in self.application.ws_connections if ws.uid == client_uid
         ]
-
-        self.ws = ws[0] if ws else None
+        self.ws = found_ws[0] if found_ws else None
 
     async def get(self, app_id: Optional[str] = None):
         if app_id is None:
@@ -272,7 +279,7 @@ class ApplicationsHandler(BaseHandler):
 
 
 class AppStorageApplication(web.Application):
-    connections = set()
+    ws_connections = set()
 
 
 def make_app(options) -> 'AppStorageApplication':

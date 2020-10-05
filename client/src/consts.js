@@ -1,3 +1,8 @@
+import React from "react";
+
+export const ClientContext = React.createContext(null);
+export const clientUidHeader = "x-client";
+
 const env = process.env.NODE_ENV || "development";
 
 const apiPort = 8000;
