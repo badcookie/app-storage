@@ -22,7 +22,8 @@ export default () => {
   };
 
   ws.onmessage = event => {
-    setFlowDetail(event.data);
+    const flowDetail = event.data === "done" ? "" : event.data;
+    setFlowDetail(flowDetail);
   };
 
   const mountNode = document.getElementById("root");

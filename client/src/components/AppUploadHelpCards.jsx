@@ -29,8 +29,6 @@ const AppUploadHelpCards = () => (
           <samp>
             ENTRYPOINT=bikes.wsgi # required
             <br />
-            PROJECT_WORKDIR=bikes # project root if exists
-            <br />
             STATIC_PATH=bikes/static/ # path to static files
             <br />
             <br />
@@ -42,8 +40,6 @@ const AppUploadHelpCards = () => (
             # app specific settings
             <br />
             DJANGO_SETTINGS_MODULE=bikes.settings
-            <br />
-            MIGRATE=true
             <br />
             <br />
             # all options below are required if create db option is chosen

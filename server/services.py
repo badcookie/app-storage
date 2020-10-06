@@ -37,6 +37,18 @@ class UnitService(ABC):
             'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
         }
 
+    @staticmethod
+    def _build_path_param(environment_data: dict, app_dirpath: str) -> str:
+        wsgi_module_path = environment_data['ENTRYPOINT']
+        split_path = wsgi_module_path.split('.')
+
+        if len(split_path) == 1:
+            return app_dirpath
+
+        path_dirs = split_path[:-1]
+        relative_lookup_path = os.path.join(*path_dirs)
+        return relative_lookup_path
+
     async def _load_application(self, app_uid: str, env_data: dict) -> None:
         """Добавляет/обновляет инстанс unit приложения в коллекции приложений
 
@@ -52,10 +64,11 @@ class UnitService(ABC):
             **env_data,
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
+        lookup_path = self._build_path_param(env_data, app_dirpath)
 
         app_data = {
             'type': 'python 3',
-            'path': env_data.get('PROJECT_WORKDIR') or app_dirpath,
+            'path': lookup_path,
             'module': wsgi_module,
             'home': 'venv',
             'environment': environment,
