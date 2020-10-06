@@ -6,13 +6,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        try_files $uri @index;
-    }
-
-    location @index {
-        add_header Cache-Control no-cache;
-        expires 0;
-        try_files /index.html =404;
+        try_files $uri $uri/index.html;
     }
 
     location /applications/ {
@@ -26,6 +20,8 @@ server {
 
    location / {
        proxy_set_header Host $host;
+       add_header Cache-Control no-cache;
+       expires 0;
        proxy_pass http://localhost:{{ unit_apps_port }}/;
    }
 }
