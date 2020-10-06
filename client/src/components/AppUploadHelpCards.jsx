@@ -19,6 +19,9 @@ const AppUploadHelpCards = () => (
             WSGI app instance inside module should be named as{" "}
             <mark>application</mark>
           </ListGroup.Item>
+          <ListGroup.Item>
+            Static files directory should be named as <mark>application</mark>
+          </ListGroup.Item>
         </ListGroup>
       </Card.Body>
     </Card>
@@ -29,7 +32,7 @@ const AppUploadHelpCards = () => (
           <samp>
             ENTRYPOINT=bikes.wsgi # required
             <br />
-            STATIC_PATH=bikes.static # path to static files
+            STATIC_PATH=bikes # path to static directory
             <br />
             <br />
             APP_NAME=T100

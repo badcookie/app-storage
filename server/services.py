@@ -243,8 +243,8 @@ class DevelopmentUnitService(UnitService):
         if not static_path:
             routes = base_routes
         else:
-            # normalized_path = self._normalize_static_path(static_path)
-            absolute_static_path = os.path.join(app_dirpath, static_path)
+            normalized_path = self._normalize_static_path(static_path)
+            absolute_static_path = os.path.join(app_dirpath, normalized_path)
             static_route = {
                 'match': {'uri': '/static/*'},
                 'action': {'share': absolute_static_path},
