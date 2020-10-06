@@ -1,17 +1,24 @@
-import React from "react";
 import axios from "axios";
 import { Modal } from "react-bootstrap";
-import { useDispatch } from "react-redux";
+import React, { useContext } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { actions } from "../../slices";
-import FileUploadForm from "../FileUploadForm";
-import { routes, flowStates } from "../../consts";
+import FileUploadModalBody from "./FileUploadModalBody";
+import {
+  routes,
+  flowStates,
+  ClientContext,
+  clientUidHeader
+} from "../../consts";
 
 const handleSubmit = ({
   addApp,
   hideModal,
   setFlowState,
-  setErrorInfo
+  setErrorInfo,
+  createDb,
+  clientUid
 }) => async event => {
   event.preventDefault();
 
@@ -19,11 +26,17 @@ const handleSubmit = ({
   setFlowState(flowStates.loading);
 
   const formData = new FormData(event.target);
+  const options = { createDb };
+  formData.append("options", JSON.stringify(options));
+
   const url = routes.createApp();
 
   try {
     const response = await axios.post(url, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: {
+        "Content-Type": "multipart/form-data",
+        [clientUidHeader]: clientUid
+      }
     });
     const app = response.data;
     addApp(app);
@@ -35,25 +48,39 @@ const handleSubmit = ({
   }
 };
 
+const getDbCreationChoice = ({ modalInfo }) => modalInfo.createDb;
+
 const AddAppModal = () => {
   const dispatch = useDispatch();
   const addApp = app => dispatch(actions.apps.addApp(app));
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 
-  const submitProps = { addApp, hideModal, setFlowState, setErrorInfo };
+  const createDb = useSelector(getDbCreationChoice);
+
+  const clientUid = useContext(ClientContext);
+
+  const submitProps = {
+    addApp,
+    hideModal,
+    setFlowState,
+    setErrorInfo,
+    createDb,
+    clientUid
+  };
 
   return (
-    <Modal show onHide={hideModal} centered>
+    <Modal show onHide={hideModal} centered size="lg">
       <Modal.Header closeButton onHide={hideModal}>
-        <Modal.Title>Load application</Modal.Title>
+        <Modal.Title>Add application</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <FileUploadForm handleSubmit={handleSubmit(submitProps)} />
-      </Modal.Body>
+      <FileUploadModalBody
+        submitHandler={handleSubmit(submitProps)}
+        showDbOption={true}
+      />
     </Modal>
   );
 };

@@ -1,0 +1,11 @@
+stages:
+  - build
+  - deploy
+
+deploy:
+  stage: deploy
+  tags: [deploy]
+  when: manual
+  script:
+    - cd deploy
+    - ansible-playbook -i hosts remote_setup.yml

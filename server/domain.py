@@ -9,9 +9,10 @@ class Entity(BaseModel):
 
 class Application(Entity):
     uid: str
-    port: int
     name: Optional[str]
     description: Optional[str]
+    port: Optional[int]
+    db_container_id: Optional[str]
 
 
 class ApplicationReadOnly(Application):

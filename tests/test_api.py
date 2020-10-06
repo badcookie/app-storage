@@ -88,7 +88,7 @@ async def test_successful_app_lifecycle(
     app_path = path.join(settings.apps_path, app_uid)
 
     saved_app = await repo.get(id=app_id)
-    assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
+    assert saved_app and saved_app.uid == app_uid
 
     assert path.exists(app_path)
 
@@ -110,8 +110,6 @@ async def test_successful_app_lifecycle(
     updated_data = json.loads(response.body.decode())
     updated_app = await repo.get(id=app_id)
 
-    print(await repo.list())
-
     assert updated_app.name == updated_data['name']
     assert updated_app.description == updated_data['description']
 
@@ -120,6 +118,7 @@ async def test_successful_app_lifecycle(
         'TEST_ENV': '2',
         f'{APP_NAME_VARIABLE_NAME}': updated_app.name,
         f'{APP_DESCRIPTION_VARIABLE_NAME}': updated_app.description,
+        'ENTRYPOINT': 'application',
     }
     new_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
 

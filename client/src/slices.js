@@ -15,15 +15,30 @@ const appSlice = createSlice({
     removeApp: (state, action) => {
       const appIdToRemove = action.payload;
       return state.filter(app => app.id !== appIdToRemove);
+    },
+    updateApp: (state, action) => {
+      const appIdToUpdate = action.payload.id;
+      const app = state.find(({ id }) => id === appIdToUpdate);
+
+      const newAppsState = state.filter(app => app.id !== appIdToUpdate);
+      const updatedApp = { ...app, ...action.payload };
+      newAppsState.push(updatedApp);
+
+      return newAppsState;
     }
   }
 });
 
 const flowStateSlice = createSlice({
   name: "flowState",
-  initialState: flowStates.loading,
+  initialState: { process: flowStates.loading, detail: "" },
   reducers: {
-    setState: (state, action) => action.payload
+    setProcess: (state, action) => {
+      state.process = action.payload;
+    },
+    setDetail: (state, action) => {
+      state.detail = action.payload;
+    }
   }
 });
 
@@ -37,10 +52,10 @@ const errorSlice = createSlice({
 
 const modalInfoSlice = createSlice({
   name: "modalInfo",
-  initialState: { type: null, app: null },
+  initialState: { type: null, app: null, createDb: false },
   reducers: {
-    setModalInfo: (state, action) => action.payload,
-    hideModal: () => ({ type: null, app: null })
+    setModalInfo: (state, action) => ({ ...state, ...action.payload }),
+    hideModal: () => ({ type: null, app: null, createDb: false })
   }
 });
 

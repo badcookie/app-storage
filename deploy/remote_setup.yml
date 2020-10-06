@@ -1,0 +1,31 @@
+- hosts: remote
+  gather_facts: false
+
+  vars:
+    templates_path: "./templates"
+
+  tasks:
+    - name: setup env files
+      template:
+        src: "{{ templates_path }}/{{ item }}.j2"
+        dest: "{{ project_path }}/{{ item }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      with_items:
+        - ".env"
+        - "ui.Dockerfile"
+        - "nginx_config"
+        - "unit.Dockerfile"
+        - "unit_config.json"
+        - "server.Dockerfile"
+        - "docker-compose.yml"
+
+    - name: run services
+      shell: docker-compose up -d --force-recreate db server unit ui
+      args:
+        chdir: "{{ project_path }}"
+
+    - name: remove intermediate images
+      shell: docker image prune --force
+      args:
+        chdir: "{{ project_path }}"

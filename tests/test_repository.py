@@ -13,7 +13,7 @@ async def test_application_repository(repository):
     collection = await repository.list()
     assert isinstance(collection, list) and len(collection) == 0
 
-    first_in_memory_instance = Application(uid='ab9eoy78', port=23976)
+    first_in_memory_instance = Application(uid='ab9eoy78')
     first_instance_id = await repository.add(first_in_memory_instance)
     assert first_instance_id
 
@@ -21,7 +21,6 @@ async def test_application_repository(repository):
     assert isinstance(first_instance, Application)
 
     assert first_instance.id == first_instance_id
-    assert first_instance.port == first_in_memory_instance.port
     assert first_instance.uid == first_in_memory_instance.uid
 
     assert first_instance.name is None
@@ -32,9 +31,6 @@ async def test_application_repository(repository):
 
     collection = await repository.list()
     assert len(collection) == 1
-
-    found_instance = await repository.get(port=23976)
-    assert found_instance.id == first_instance_id
 
     data_to_update = {'name': 'Bob', 'description': 'Nice app'}
     updated_instance = await repository.update(first_instance_id, data_to_update)

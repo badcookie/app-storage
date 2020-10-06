@@ -4,67 +4,249 @@ import os
 import shutil
 import subprocess
 import venv
+from abc import ABC, abstractmethod
+from functools import partial
 from os import mkdir, path
 from socket import AF_INET, SOCK_STREAM, socket
 from time import time
-from typing import List
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 from zipfile import ZipFile
 
 from server.errors import ApplicationInitError
-from server.settings import settings
+from server.settings import Environment, settings
 from server.validation import ENV_FILE_NAME, REQUIREMENTS_FILE_NAME
 from tornado.httpclient import AsyncHTTPClient
 
+if TYPE_CHECKING:
+    from docker import DockerClient
 
-class UnitService:
-    BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
-    MODIFIED_AT_ENV_NAME = 'APPGEN'
+
+class UnitService(ABC):
     INITIAL_CONFIG_PATH = os.path.join(settings.BASE_DIR, 'unit_config.json')
+    BASE_URL = f'http://{settings.UNIT_HOST}:{settings.UNIT_PORT}/config'
+    MODIFIED_AT_ENV_NAME = 'MODIFIED_AT'
 
     client = AsyncHTTPClient()
 
-    async def register_app(self, app_uid: str, environment_data: dict) -> int:
-        """Регистрирует приложение в файловой системе
+    def __init__(self):
+        self.URLS = {
+            'routes': lambda: f'{self.BASE_URL}/routes/',
+            'application': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/',
+            'app_route': lambda app_uid: f'{self.BASE_URL}/routes/{app_uid}/',
+            'app_env': lambda app_uid: f'{self.BASE_URL}/applications/{app_uid}/environment/',  # NOQA
+        }
+
+    @staticmethod
+    def _build_path_param(wsgi_module_path: str, app_dirpath: str) -> str:
+        split_path = wsgi_module_path.split('.')
+
+        if len(split_path) == 1:
+            return app_dirpath
+
+        path_dirs = split_path[:-1]
+        relative_lookup_path = os.path.join(*path_dirs)
+        return relative_lookup_path
+
+    @staticmethod
+    def _normalize_static_path(static_path: str) -> str:
+        split_path = static_path.split('.')
+
+        if split_path[-1] != 'static':
+            return os.path.join(*split_path)
+
+        static_dir_paths = split_path[:-1]
+        if not static_dir_paths:
+            return os.path.curdir
+
+        return os.path.join(*static_dir_paths)
+
+    async def _load_application(self, app_uid: str, env_data: dict) -> None:
+        """Добавляет/обновляет инстанс unit приложения в коллекции приложений
 
         :param app_uid: uid приложения
-        :param environment_data: переменные среды приложения
-        :returns порт, по которому доступно приложение
+        :param env_data: переменные среды приложения
         """
 
-        inner_app_path = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        venv_dir = os.path.join(inner_app_path, 'venv')
-        module = environment_data.get('ENTRYPOINT')
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        wsgi_module_path = env_data.get('ENTRYPOINT')
 
         app_creation_ts = str(time())
         environment = {
-            **environment_data,
+            **env_data,
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
+        lookup_path = self._build_path_param(wsgi_module_path, app_dirpath)
 
         app_data = {
             'type': 'python 3',
-            'path': environment_data.get('PROJECT_WORKDIR') or inner_app_path,
-            'module': module,
-            'home': venv_dir,
+            'path': lookup_path,
+            'module': wsgi_module_path,
+            'home': 'venv',
             'environment': environment,
-            'working_directory': inner_app_path,
+            'working_directory': app_dirpath,
         }
-        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
+        app_url = self.URLS['application'](app_uid)
 
         await self.client.fetch(app_url, body=json.dumps(app_data), method='PUT')
 
         log_event('registered app configuration', app_uid)
 
-        static_path = environment_data.get('STATIC_PATH')
+    async def _remove_application(self, app_uid: str) -> None:
+        """Удаляет инстанс unit приложения из коллекции приложений
+
+        :param app_uid: uid приложения
+        """
+
+        app_url = self.URLS['application'](app_uid)
+        await self.client.fetch(app_url, method='DELETE', raise_error=False)
+
+        log_event('unregistered application', app_uid)
+
+    @abstractmethod
+    def register_app(self, app_uid: str, environment_data: dict) -> Optional[dict]:
+        """Регистрирует полную конфигурацию приложения в unit
+
+        :param app_uid: uid приложения
+        :param environment_data: переменные среды приложения
+        :return метаданные приложения из unit
+        """
+        ...
+
+    @abstractmethod
+    def unregister_app(self, app_uid: str) -> None:
+        """Удаляет полную конфигурацию приложения из unit
+
+        :param app_uid: uid приложения
+        """
+        ...
+
+    async def reset_configuration(self) -> None:
+        """Сбрасывает всю конфигурацию unit до дефолтного состояния"""
+
+        with open(self.INITIAL_CONFIG_PATH) as config:
+            request_data = config.read().strip('\n')
+            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
+
+    async def get_app_environment_data(self, app_uid: str) -> dict:
+        """Забирает из конфигурации переменные среды приложения
+
+        :param app_uid: uid приложения
+        :return: переменные среды приложения
+        """
+
+        app_env_url = self.URLS['app_env'](app_uid)
+        response = await self.client.fetch(app_env_url, method='GET')
+        response_data = response.body.decode()
+        return json.loads(response_data)
+
+
+class ProductionUnitService(UnitService):
+    async def _load_routes(self, app_uid: str, env_data: dict) -> None:
+        """Добавляет условия, которые при выполнении перенаправляют
+        запрос нужному приложению
+
+        :param app_uid: uid приложения
+        :param env_data: переменные среды приложения
+        """
+
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        static_path = env_data.get('STATIC_PATH')
+        routes_url = self.URLS['routes']()
+
+        if static_path:
+            normalized_path = self._normalize_static_path(static_path)
+            absolute_static_path = os.path.join(app_dirpath, normalized_path)
+            static_route = {
+                'match': {
+                    'host': f'{app_uid}.{settings.PROJECT_ADDRESS}',
+                    'uri': '/static/*',
+                },
+                'action': {'share': absolute_static_path},
+            }
+
+            await self.client.fetch(
+                routes_url, body=json.dumps(static_route), method='POST'
+            )
+
+        app_route = {
+            'match': {'host': f'{app_uid}.{settings.PROJECT_ADDRESS}'},
+            'action': {'pass': f'applications/{app_uid}'},
+        }
+
+        await self.client.fetch(routes_url, body=json.dumps(app_route), method='POST')
+
+        log_event('registered app routing', app_uid)
+
+    async def register_app(self, app_uid: str, environment_data: dict) -> None:
+        await self._load_application(app_uid, environment_data)
+        await self._load_routes(app_uid, environment_data)
+
+    @staticmethod
+    def _is_deleted_app_route(deleted_app_uid: str, route: dict) -> bool:
+        condition = route['match']
+        expected_host = condition['host']
+
+        app_uid, *_ = expected_host.split('.')
+        return app_uid == deleted_app_uid
+
+    async def _remove_routes(self, app_uid: str) -> None:
+        """Удаляет матчеры заданного приложения, которые
+        перенаправляют ему запросы
+
+        :param app_uid: uid приложения
+        """
+
+        routes_url = self.URLS['routes']()
+
+        routes_response = await self.client.fetch(routes_url, method='GET')
+        response_data = routes_response.body.decode()
+
+        routes = json.loads(response_data)
+
+        is_deleted_app_route = partial(self._is_deleted_app_route, app_uid)
+        filtered_routes = [route for route in routes if not is_deleted_app_route(route)]
+
+        await self.client.fetch(
+            routes_url,
+            body=json.dumps(filtered_routes),
+            method='PUT',
+            raise_error=False,
+        )
+
+        log_event('unregistered routes', app_uid)
+
+    async def unregister_app(self, app_uid: str) -> None:
+        await self._remove_routes(app_uid)
+        await self._remove_application(app_uid)
+
+    async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
+        """Обновляет конфигурацию приложения в unit
+
+        :param app_uid: uid приложения
+        :param new_env_data: новая конфигурация
+        """
+
+        await self._load_application(app_uid, new_env_data)
+        await self._remove_routes(app_uid)
+        await self._load_routes(app_uid, new_env_data)
+
+        log_event('app configuration updated', app_uid)
+
+
+class DevelopmentUnitService(UnitService):
+    async def _load_routes(self, app_uid: str, env_data: dict) -> None:
+        app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
+        static_path = env_data.get('STATIC_PATH')
         base_routes = [{'action': {'pass': f'applications/{app_uid}'}}]
 
         if not static_path:
             routes = base_routes
         else:
-            absolute_static_path = os.path.join(inner_app_path, static_path)
+            normalized_path = self._normalize_static_path(static_path)
+            absolute_static_path = os.path.join(app_dirpath, normalized_path)
             static_route = {
-                'match': {'uri': '*/static/*'},
+                'match': {'uri': '/static/*'},
                 'action': {'share': absolute_static_path},
             }
             routes = [static_route, *base_routes]
@@ -75,6 +257,7 @@ class UnitService:
 
         log_event('registered app routing', app_uid)
 
+    async def _load_listener(self, app_uid: str) -> int:
         app_port = get_unused_port()
 
         listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
@@ -88,60 +271,63 @@ class UnitService:
 
         return app_port
 
-    async def unregister_app(self, app_uid: str, app_port: int) -> None:
-        """Удаляет приложение из конфигурации
+    @staticmethod
+    def _is_deleted_app_listener(deleted_app_uid: str, listener: dict) -> bool:
+        request_destination = listener['pass']
+        _, app_uid = request_destination.split('/')
+        return app_uid == deleted_app_uid
 
-        :param app_uid: uid приложения
-        :param app_port: порт приложения
-        """
+    async def _remove_listener(self, app_uid: str) -> None:
+        listeners_url = f'{self.BASE_URL}/listeners/'
+        reponse = await self.client.fetch(listeners_url, method='GET')
 
-        listener_url = f'{self.BASE_URL}/listeners/*:{app_port}/'
-        await self.client.fetch(listener_url, method='DELETE')
+        response_data = reponse.body.decode()
+        listeners = json.loads(response_data)
 
-        log_event('unregistered listener on port %s', app_uid, app_port)
+        is_deleted_app_listener = partial(self._is_deleted_app_listener, app_uid)
+        filtered_listeners = {
+            address: destination
+            for address, destination in listeners.items()
+            if not is_deleted_app_listener(destination)
+        }
 
+        await self.client.fetch(
+            listeners_url,
+            body=json.dumps(filtered_listeners),
+            method='PUT',
+            raise_error=False,
+        )
+
+        log_event('unregistered listener', app_uid)
+
+    async def _remove_routes(self, app_uid: str) -> None:
         route_url = f'{self.BASE_URL}/routes/{app_uid}/'
-        await self.client.fetch(route_url, method='DELETE')
+        await self.client.fetch(route_url, method='DELETE', raise_error=False)
 
         log_event('unregistered route', app_uid)
 
-        app_url = f'{self.BASE_URL}/applications/{app_uid}/'
-        await self.client.fetch(app_url, method='DELETE')
+    async def register_app(self, app_uid: str, environment_data: dict) -> dict:
+        await self._load_application(app_uid, environment_data)
+        await self._load_routes(app_uid, environment_data)
+        app_port = await self._load_listener(app_uid)
+        return {'port': app_port}
 
-        log_event('unregistered completely', app_uid)
+    async def unregister_app(self, app_uid: str) -> None:
+        await self._remove_listener(app_uid)
+        await self._remove_routes(app_uid)
+        await self._remove_application(app_uid)
 
     async def reload_app(self, app_uid: str, new_env_data: dict) -> None:
-        """Перезагружает приложение через обновление переменной среды.
-        Сейчас документация предлагает только такой способ
+        """Обновляет конфигурацию приложения в unit
 
         :param app_uid: uid приложения
         :param new_env_data: новая конфигурация
         """
 
-        updated_modification_ts = str(time())
-        updated_env = {
-            **new_env_data,
-            f'{self.MODIFIED_AT_ENV_NAME}': updated_modification_ts,
-        }
-
-        request_data = json.dumps(updated_env)
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
-        await self.client.fetch(app_env_url, body=request_data, method='PUT')
+        await self._load_routes(app_uid, new_env_data)
+        await self._load_application(app_uid, new_env_data)
 
         log_event('app configuration updated', app_uid)
-
-    async def reset_configuration(self) -> None:
-        """Сбрасывает всю конфигурацию - удаляет приложения и порты"""
-
-        with open(self.INITIAL_CONFIG_PATH) as config:
-            request_data = config.read().strip('\n')
-            await self.client.fetch(self.BASE_URL, body=request_data, method='PUT')
-
-    async def get_app_environment_data(self, app_uid: str) -> dict:
-        app_env_url = f'{self.BASE_URL}/applications/{app_uid}/environment/'
-        response = await self.client.fetch(app_env_url, method='GET')
-        response_data = response.body.decode()
-        return json.loads(response_data)
 
 
 def validate_package(package: 'ZipFile', rules: List[dict]) -> None:
@@ -269,7 +455,7 @@ def create_application_environment(package: 'ZipFile') -> str:
 
 def get_unused_port() -> int:
     with socket(AF_INET, SOCK_STREAM) as sock:
-        sock.bind((settings.UNIT_HOST, 0))
+        sock.bind(('', 0))
         return sock.getsockname()[1]
 
 
@@ -302,9 +488,42 @@ async def update_application_environment(app_uid: str, package: 'ZipFile') -> No
     log_event('virtual environment updated', app_uid)
 
 
-def log_event(message: str, app_uid: str, *args):
+def log_event(message: str, app_uid: Optional[str] = None, *args):
     extra_args = {'app_uid': app_uid}
     if args:
         logging.info(message, *args, extra=extra_args)
     else:
         logging.info(message, extra=extra_args)
+
+
+def get_unit_service_from_env() -> 'UnitService':
+    is_production = settings.ENVIRONMENT == Environment.PRODUCTION
+    return ProductionUnitService() if is_production else DevelopmentUnitService()
+
+
+def create_db_instance(client: 'DockerClient', env_data: dict) -> str:
+    db_port = env_data.get('DB_PORT')
+    db_user = env_data.get('DB_USER')
+    db_password = env_data.get('DB_PASSWORD')
+
+    container = client.containers.create(
+        image='postgres:latest',
+        auto_remove=True,
+        ports={5432: db_port},
+        environment={'POSTGRES_USER': db_user, 'POSTGRES_PASSWORD': db_password},
+    )
+
+    log_event('created db container')
+
+    container.start()
+
+    log_event('started container')
+
+    return container.id
+
+
+def destroy_db_instance(client: 'DockerClient', container_id: str) -> None:
+    container = client.containers.get(container_id)
+    if container:
+        container.stop()
+        log_event('destroyed db container')

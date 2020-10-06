@@ -1,2 +1,9 @@
-project_name: app_storage
+project_name: app-storage
+project_address: "{{ project_name }}.xyz"
+
 mounted_apps_path: /apps/
+static_path: /var/www/static/
+ssl_certificate_key_path: /etc/nginx/key.pem
+ssl_certificate_path: /etc/nginx/cert.pem
+
+unit_apps_port: 8888

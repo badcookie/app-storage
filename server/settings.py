@@ -15,7 +15,7 @@ class Environment(str):
 
 class AppFilter(logging.Filter):
     def filter(self, record):
-        if not hasattr(record, 'app_uid'):
+        if not hasattr(record, 'app_uid') or record.app_uid is None:
             record.app_uid = '-'
         return True
 
@@ -36,6 +36,7 @@ class DBSettings(BaseSettings):
 class Settings(BaseSettings):
     ENVIRONMENT: 'Environment'
     PROJECT_NAME: str
+    PROJECT_ADDRESS: str
 
     DB: 'DBSettings' = DBSettings(_env_file=env_path)
 
@@ -53,6 +54,8 @@ class Settings(BaseSettings):
         env='APPS_PATH', default=path.abspath(path.join(BASE_DIR, pardir, 'apps'))
     )
     MOUNTED_APPS_PATH: str
+
+    CLIENT_UID_HEADER: str = 'x-client'
 
     @property
     def logging(self) -> dict:

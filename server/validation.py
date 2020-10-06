@@ -1,12 +1,7 @@
 from functools import reduce
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-from server.errors import (
-    EmptyRequiredFileError,
-    InvalidConfiguration,
-    InvalidPackageSizeError,
-    RequiredFileNotFoundError,
-)
+from server import errors
 from server.settings import settings
 
 if TYPE_CHECKING:
@@ -65,9 +60,48 @@ def required_configuration_included(package: 'ZipFile') -> bool:
     return False
 
 
+def database_configuration_included(package: 'ZipFile') -> bool:
+    env_data = package.read(ENV_FILE_NAME)
+    decoded_data = env_data.decode()
+
+    lines = [line for line in decoded_data.split('\n') if line]
+
+    expected_params = {'DB_PORT': None, 'DB_PASSWORD': None, 'DB_USER': None}
+
+    for line in lines:
+        key, value = line.split('=')
+        if key in expected_params:
+            expected_params[key] = value
+
+    expected_params_values = list(expected_params.values())
+    return all(param is not None for param in expected_params_values)
+
+
 VALIDATION_RULES = [
-    {'constraint': required_files_included, 'exception': RequiredFileNotFoundError},
-    {'constraint': package_size_valid, 'exception': InvalidPackageSizeError},
-    {'constraint': required_files_not_empty, 'exception': EmptyRequiredFileError},
-    {'constraint': required_configuration_included, 'exception': InvalidConfiguration},
+    {
+        'constraint': required_files_included,
+        'exception': errors.RequiredFileNotFoundError,
+    },
+    {'constraint': package_size_valid, 'exception': errors.InvalidPackageSizeError},
+    {
+        'constraint': required_files_not_empty,
+        'exception': errors.EmptyRequiredFileError,
+    },
+    {
+        'constraint': required_configuration_included,
+        'exception': errors.InvalidConfiguration,
+    },
 ]
+
+
+DB_VALIDATION_RULES = [
+    *VALIDATION_RULES,
+    {
+        'constraint': database_configuration_included,
+        'exception': errors.DBConfigurationError,
+    },
+]
+
+
+def get_validation_rules(create_db_instance: bool) -> List[dict]:
+    return DB_VALIDATION_RULES if create_db_instance else VALIDATION_RULES

@@ -1,0 +1,27 @@
+server {
+    listen 80;
+
+    root {{ static_path }};
+
+    client_max_body_size 10M;
+
+    location / {
+        try_files $uri $uri/index.html;
+    }
+
+    location /applications/ {
+        proxy_pass http://localhost:{{ server_port }}/applications/;
+    }
+}
+
+server {
+   listen 80;
+   server_name ~^(www\.)?(?<app_uid>.+)\.{{ project_name }}\.xyz$;
+
+   location / {
+       proxy_set_header Host $host;
+       add_header Cache-Control no-cache;
+       expires 0;
+       proxy_pass http://localhost:{{ unit_apps_port }}/;
+   }
+}

@@ -1,22 +1,26 @@
 import axios from "axios";
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { Card, Button } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../slices";
-import { routes, flowStates } from "../consts";
+import { routes, flowStates, ClientContext, clientUidHeader } from "../consts";
 
-const fetchApps = ({ addApps, setFlowState, setErrorInfo }) => () => {
+const fetchApps = ({
+  addApps,
+  setFlowState,
+  setErrorInfo,
+  clientUid
+}) => () => {
   const url = routes.getApps();
   axios
-    .get(url)
+    .get(url, { headers: { [clientUidHeader]: clientUid } })
     .then(response => {
       const apps = response.data;
       addApps(apps);
       setFlowState(flowStates.ready);
     })
     .catch(error => {
-      console.log("ggg");
       setFlowState(flowStates.error);
       setErrorInfo(error.message);
     });
@@ -34,7 +38,7 @@ const renderSingleApp = props => app => {
         <span className="d-inline-flex align-items-center">{appName}</span>
         <Button
           variant="success"
-          href={routes.visitApp(app.port)}
+          href={routes.visitApp(app)}
           target="_blank"
           className="ml-auto mr-1"
         >
@@ -70,6 +74,8 @@ const renderApps = (apps, appManagementTools) => {
 };
 
 const Applications = () => {
+  const clientUid = useContext(ClientContext);
+
   const dispatch = useDispatch();
 
   const setModalInfo = info => dispatch(actions.modalInfo.setModalInfo(info));
@@ -81,11 +87,11 @@ const Applications = () => {
 
   const addApps = apps => dispatch(actions.apps.addApps(apps));
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
 
-  const props = { addApps, setFlowState, setErrorInfo };
+  const props = { addApps, setFlowState, setErrorInfo, clientUid };
   useEffect(fetchApps(props), []);
 
   const apps = useSelector(getApps);

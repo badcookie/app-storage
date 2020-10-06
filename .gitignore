@@ -4,9 +4,10 @@ __pycache__
 
 apps
 temp
-Dockerfile.unit
-Dockerfile.server
 docker-compose.yml
+*.Dockerfile
+nginx_config
+unit_config.json
 
 venv
 .env

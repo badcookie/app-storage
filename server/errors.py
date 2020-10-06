@@ -39,6 +39,10 @@ class InvalidConfiguration(AppStorageException):
     reason = 'Invalid environment configuration'
 
 
+class DBConfigurationError(AppStorageException):
+    reason = 'Missing database configuration'
+
+
 def handle_internal_error(func) -> Callable:
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -49,11 +53,13 @@ def handle_internal_error(func) -> Callable:
         except Exception as error:
             if isinstance(error, (HTTPError, AppStorageException)):
                 message = error.reason
-                handler.handle_client_error(status=error.status_code, error=message)
+                await handler.handle_client_error(
+                    status=error.status_code, error=message
+                )
             else:
-                message = str(error)
-                handler.handle_internal_error(error=message)
+                message = error
+                await handler.handle_internal_error(error=str(message))
 
-            logging.error(message)
+            logging.error(message, exc_info=True)
 
     return wrapper

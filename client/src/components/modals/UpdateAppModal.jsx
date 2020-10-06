@@ -1,17 +1,24 @@
-import React from "react";
 import axios from "axios";
 import { Modal } from "react-bootstrap";
+import React, { useContext } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
 import { actions } from "../../slices";
-import FileUploadForm from "../FileUploadForm";
-import { routes, flowStates } from "../../consts";
+import {
+  routes,
+  flowStates,
+  ClientContext,
+  clientUidHeader
+} from "../../consts";
+import FileUploadModalBody from "./FileUploadModalBody";
 
-const handleSumbit = ({
+const handleSubmit = ({
   appId,
+  updateApp,
   hideModal,
   setFlowState,
-  setErrorInfo
+  setErrorInfo,
+  clientUid
 }) => async event => {
   event.preventDefault();
 
@@ -22,9 +29,16 @@ const handleSumbit = ({
   const url = routes.updateApp(appId);
 
   try {
-    await axios.put(url, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
+    const response = await axios.put(url, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        [clientUidHeader]: clientUid
+      }
     });
+
+    const updatedAppData = response.data;
+    updateApp(updatedAppData);
+
     setFlowState(flowStates.ready);
   } catch (error) {
     const message = error.response ? error.response.data : error.message;
@@ -39,22 +53,32 @@ const UpdateAppModal = () => {
   const dispatch = useDispatch();
   const hideModal = () => dispatch(actions.modalInfo.hideModal());
   const setFlowState = newState =>
-    dispatch(actions.flowState.setState(newState));
+    dispatch(actions.flowState.setProcess(newState));
   const setErrorInfo = errorData =>
     dispatch(actions.errorInfo.setErrorInfo(errorData));
+  const updateApp = newAppData => dispatch(actions.apps.updateApp(newAppData));
+
+  const clientUid = useContext(ClientContext);
 
   const { app } = useSelector(getModalInfo);
-  const sumbitProps = { appId: app.id, hideModal, setFlowState, setErrorInfo };
+  const submitProps = {
+    appId: app.id,
+    hideModal,
+    setFlowState,
+    setErrorInfo,
+    updateApp,
+    clientUid
+  };
 
   return (
-    <Modal show onHide={hideModal}>
+    <Modal show onHide={hideModal} size="lg">
       <Modal.Header closeButton onHide={hideModal}>
         <Modal.Title>Update application</Modal.Title>
       </Modal.Header>
-
-      <Modal.Body>
-        <FileUploadForm handleSumbit={handleSumbit(sumbitProps)} />
-      </Modal.Body>
+      <FileUploadModalBody
+        submitHandler={handleSubmit(submitProps)}
+        showDbOption={false}
+      />
     </Modal>
   );
 };

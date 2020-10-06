@@ -1,5 +1,9 @@
 [all]
-localhost ansible_connection=local
+develop ansible_connection=local
+production ansible_connection=local ansible_python_interpreter=/usr/bin/python3
 
 [local]
-localhost
+develop
+
+[remote]
+production
