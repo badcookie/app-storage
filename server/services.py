@@ -38,8 +38,7 @@ class UnitService(ABC):
         }
 
     @staticmethod
-    def _build_path_param(environment_data: dict, app_dirpath: str) -> str:
-        wsgi_module_path = environment_data['ENTRYPOINT']
+    def _build_path_param(wsgi_module_path: str, app_dirpath: str) -> str:
         split_path = wsgi_module_path.split('.')
 
         if len(split_path) == 1:
@@ -57,19 +56,19 @@ class UnitService(ABC):
         """
 
         app_dirpath = os.path.join(settings.MOUNTED_APPS_PATH, app_uid)
-        wsgi_module = env_data.get('ENTRYPOINT')
+        wsgi_module_path = env_data.get('ENTRYPOINT')
 
         app_creation_ts = str(time())
         environment = {
             **env_data,
             f'{self.MODIFIED_AT_ENV_NAME}': app_creation_ts,
         }
-        lookup_path = self._build_path_param(env_data, app_dirpath)
+        lookup_path = self._build_path_param(wsgi_module_path, app_dirpath)
 
         app_data = {
             'type': 'python 3',
             'path': lookup_path,
-            'module': wsgi_module,
+            'module': wsgi_module_path,
             'home': 'venv',
             'environment': environment,
             'working_directory': app_dirpath,
