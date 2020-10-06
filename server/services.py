@@ -48,6 +48,19 @@ class UnitService(ABC):
         relative_lookup_path = os.path.join(*path_dirs)
         return relative_lookup_path
 
+    @staticmethod
+    def _normalize_static_path(static_path: str) -> str:
+        split_path = static_path.split('.')
+
+        if split_path[-1] != 'static':
+            return os.path.join(*split_path)
+
+        static_dir_paths = split_path[:-1]
+        if not static_dir_paths:
+            return os.path.curdir
+
+        return os.path.join(*static_dir_paths)
+
     async def _load_application(self, app_uid: str, env_data: dict) -> None:
         """Добавляет/обновляет инстанс unit приложения в коллекции приложений
 
@@ -142,7 +155,8 @@ class ProductionUnitService(UnitService):
         routes_url = self.URLS['routes']()
 
         if static_path:
-            absolute_static_path = os.path.join(app_dirpath, static_path)
+            normalized_path = self._normalize_static_path(static_path)
+            absolute_static_path = os.path.join(app_dirpath, normalized_path)
             static_route = {
                 'match': {
                     'host': f'{app_uid}.{settings.PROJECT_ADDRESS}',
@@ -229,6 +243,7 @@ class DevelopmentUnitService(UnitService):
         if not static_path:
             routes = base_routes
         else:
+            # normalized_path = self._normalize_static_path(static_path)
             absolute_static_path = os.path.join(app_dirpath, static_path)
             static_route = {
                 'match': {'uri': '/static/*'},

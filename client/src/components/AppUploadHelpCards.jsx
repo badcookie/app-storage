@@ -29,7 +29,7 @@ const AppUploadHelpCards = () => (
           <samp>
             ENTRYPOINT=bikes.wsgi # required
             <br />
-            STATIC_PATH=bikes/static/ # path to static files
+            STATIC_PATH=bikes.static # path to static files
             <br />
             <br />
             APP_NAME=T100
