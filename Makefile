@@ -8,6 +8,8 @@ test:
 
 install:
 	@poetry install
+	@cd client
+	@yarn install
 
 setup:
 	@cd deploy
@@ -17,4 +19,9 @@ server:
 	@export PYTHONPATH="${PYTHONPATH}:."
 	@python server/main.py
 
-.PHONY: server
+client:
+	@cd client
+	@yarn start
+
+
+.PHONY: client server

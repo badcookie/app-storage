@@ -6,6 +6,7 @@
 - docker-compose
 - ansible
 - poetry
+- yarn
 
 ### Setup
 
