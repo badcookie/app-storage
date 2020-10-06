@@ -39,6 +39,10 @@ class InvalidConfiguration(AppStorageException):
     reason = 'Invalid environment configuration'
 
 
+class DBConfigurationError(AppStorageException):
+    reason = 'Missing database configuration'
+
+
 def handle_internal_error(func) -> Callable:
     @wraps(func)
     async def wrapper(*args, **kwargs):

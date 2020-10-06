@@ -27,7 +27,7 @@ from server.settings import settings
 from server.validation import (
     APP_DESCRIPTION_VARIABLE_NAME,
     APP_NAME_VARIABLE_NAME,
-    VALIDATION_RULES,
+    get_validation_rules,
 )
 from tornado import web, websocket
 from tornado.websocket import WebSocketClosedError
@@ -176,11 +176,14 @@ class ApplicationsHandler(BaseHandler):
             raise web.HTTPError(400, reason=UNEXPECTED_PARAM_MESSAGE)
 
         file = self._get_request_file()
+        create_db = self._get_db_option()
+
+        validation_rules = get_validation_rules(create_db)
 
         if not file:
             raise web.HTTPError(400, reason=FILE_EXPECTED_MESSAGE)
 
-        validate_package(file, VALIDATION_RULES)
+        validate_package(file, validation_rules)
 
         await self.notify_client('Creating application environment')
 
@@ -189,7 +192,6 @@ class ApplicationsHandler(BaseHandler):
 
         app_meta = {}
 
-        create_db = self._get_db_option()
         if create_db:
             db_data = get_db_data(environment_variables)
 
