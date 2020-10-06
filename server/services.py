@@ -506,12 +506,8 @@ def create_db_instance(client: 'DockerClient', env_data: dict) -> str:
     db_user = env_data.get('DB_USER')
     db_password = env_data.get('DB_PASSWORD')
 
-    postgres_image = client.images.pull('postgres:latest')
-
-    log_event('pulling image')
-
     container = client.containers.create(
-        image=postgres_image,
+        image='postgres:latest',
         auto_remove=True,
         ports={5432: db_port},
         environment={'POSTGRES_USER': db_user, 'POSTGRES_PASSWORD': db_password},
