@@ -1,8 +1,20 @@
+.ONESHELL: all
+
+test_file = ''
+
 test:
-	@python -m pytest tests/
+	@export PYTHONPATH="${PYTHONPATH}:."
+	@pytest -s tests/$(test_file)
 
-run:
-	@docker-compose up -d
+install:
+	@poetry install
 
-stop:
-	@docker-compose down
+setup:
+	@cd deploy
+	@ansible-playbook -i hosts --limit local setup.yml
+
+server:
+	@export PYTHONPATH="${PYTHONPATH}:."
+	@python server/main.py
+
+.PHONY: server

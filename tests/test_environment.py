@@ -2,10 +2,14 @@ import os
 from unittest.mock import patch
 
 import pytest
-from src import errors
-from src.consts import APP_ID_CREATION_TRIES_COUNT, APPS_DIR
-from src.environment import (create_application_environment, generate_app_id,
-                             init_app, validate_package)
+from server import errors
+from server.services import (
+    create_app_directory,
+    create_application_environment,
+    generate_app_uid,
+    validate_package,
+)
+from server.settings import settings
 
 
 def test_valid_package(get_package, validation_rules):
@@ -33,42 +37,36 @@ def test_package_with_invalid_size(get_package, validation_rules):
 
 
 def test_successful_app_init_from_first_try():
-    app_dir = init_app()
+    app_dir = create_app_directory()
     assert os.path.exists(app_dir)
 
 
-@patch('src.environment.generate_app_id')
+@patch('server.services.generate_app_uid')
 def test_successful_app_init_from_nth_try(app_id_generator_mock, get_items_generator):
-    app_ids = [
-        generate_app_id()
-        for _ in range(APP_ID_CREATION_TRIES_COUNT)
-    ]
+    app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids[:-1]:
-        os.mkdir(os.path.join(APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.apps_path, uid))
 
     items_generator = get_items_generator(app_ids)
 
     app_id_generator_mock.side_effect = lambda: next(items_generator)
-    app_dir = init_app()
+    app_dir = create_app_directory()
     assert os.path.exists(app_dir)
 
 
-@patch('src.environment.generate_app_id')
+@patch('server.services.generate_app_uid')
 def test_failed_app_init(app_id_generator_mock, get_items_generator):
-    app_ids = [
-        generate_app_id()
-        for _ in range(APP_ID_CREATION_TRIES_COUNT)
-    ]
+    app_ids = [generate_app_uid() for _ in range(settings.APP_ID_CREATION_TRIES_COUNT)]
 
     for uid in app_ids:
-        os.mkdir(os.path.join(APPS_DIR, uid))
+        os.mkdir(os.path.join(settings.apps_path, uid))
 
     items_generator = get_items_generator(app_ids)
 
     app_id_generator_mock.side_effect = lambda: next(items_generator)
     with pytest.raises(errors.ApplicationInitError):
-        init_app()
+        create_app_directory()
 
 
 def test_environment_creation(get_package, validation_rules):
@@ -76,7 +74,7 @@ def test_environment_creation(get_package, validation_rules):
     validate_package(package, validation_rules)
 
     app_id = create_application_environment(package)
-    app_dirpath = os.path.join(APPS_DIR, app_id)
+    app_dirpath = os.path.join(settings.apps_path, app_id)
     assert os.path.exists(app_dirpath)
 
     extracted_files = os.listdir(app_dirpath)

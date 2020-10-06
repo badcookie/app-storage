@@ -1,80 +1,32 @@
 import json
 from os import path
 
-import docker
 import pytest
 from requests import Request
-from src.apps_management import register_app
-from src.consts import APPS_DIR, BASE_DIR, PROJECT_NAME, UNIT_IMAGE, UNIT_PORT
-from src.environment import create_application_environment, validate_package
-from src.validation import required_files
+from server.settings import settings
+from server.validation import APP_DESCRIPTION_VARIABLE_NAME, APP_NAME_VARIABLE_NAME
 
 TESTS_DIR = path.dirname(__file__)
-FIXTURES_DIR = path.join(TESTS_DIR, "fixtures")
+FIXTURES_DIR = path.join(TESTS_DIR, 'fixtures')
 
 
-@pytest.fixture(scope='module')
-def docker_client():
-    return docker.from_env()
+@pytest.fixture(autouse=True)
+async def teardown_unit(app):
+    yield
+    configurator = app.settings['configurator']
+    await configurator.reset_configuration()
 
 
-@pytest.fixture(scope='module', autouse=True)
-def unit_service(docker_client):
-    containers = docker_client.containers.list()
-    runner_container = [
-        *filter(lambda item: 'runner' in item.name, containers)
-    ]
-    network = (
-        'host' if not runner_container
-        else f'container:/{runner_container[0].name}'
-    )
-    image = docker_client.images.pull(UNIT_IMAGE)
-    volume = {
-        APPS_DIR: {'bind': '/apps/', 'mode': 'rw'},
+@pytest.fixture
+def routes(base_url):
+    return {
+        'app_list': lambda: f'{base_url}/applications/',
+        'app_detail': lambda app_id: f'{base_url}/applications/{app_id}/',
     }
-    command = f"unitd --no-daemon --control 127.0.0.1:{UNIT_PORT}"
-    container = docker_client.containers.create(
-        image=image, network=network,
-        command=command, auto_remove=True,
-        volumes=volume, name='test_unit_service',
-    )
-    container.start()
-    yield container
-    container.stop()
-
-
-# @pytest.fixture(scope='module', autouse=True)
-# def another_unit_service(docker_client):
-#     containers = docker_client.containers.list()
-#     runner_container = [
-#         *filter(lambda item: 'runner' in item.name, containers)
-#     ]
-#     network = (
-#         'host' if not runner_container
-#         else f'container:/{runner_container[0].name}'
-#     )
-#     image = docker_client.images.pull(UNIT_IMAGE)
-#     volume = {
-#         APPS_DIR: {'bind': '/apps/', 'mode': 'rw'},
-#     }
-#     command = f"unitd --no-daemon --control 127.0.0.1:9001"
-#     container = docker_client.containers.create(
-#         image=image, network=network,
-#         command=command, auto_remove=False,
-#         volumes=volume, name='test_unit_service2',
-#     )
-#     container.start()
-#     return container
-#     # container.stop()
 
 
 @pytest.fixture
-def app_creation_url(base_url):
-    return f'{base_url}/create/'
-
-
-@pytest.fixture
-def prepare_send_file_request(get_package, app_creation_url):
+def prepare_send_file_request(get_package, routes):
     def _(filename: str) -> dict:
         get_package(filename)
 
@@ -85,10 +37,12 @@ def prepare_send_file_request(get_package, app_creation_url):
         zipfile = open(absolute_filepath, 'rb')
         files = {'zipfile': zipfile}
 
-        request = Request(url=app_creation_url, files=files)
+        url = routes['app_list']()
+        request = Request(url=url, files=files)
         prepared_request = request.prepare()
         content_type = prepared_request.headers.get('Content-Type')
-        headers = {"Content-Type": content_type}
+        headers = {'Content-Type': content_type}
+
         return {
             'body': prepared_request.body,
             'headers': headers,
@@ -97,50 +51,131 @@ def prepare_send_file_request(get_package, app_creation_url):
     return _
 
 
-@pytest.mark.gen_test
-async def test_simple_get_request(http_client, base_url):
-    response = await http_client.fetch(f"{base_url}")
-    assert response.code == 200
-    data = response.body.decode()
-    assert json.loads(data) == {"it": "works"}
-
-
-@pytest.mark.gen_test
-async def test_successful_app_validation(
-        prepare_send_file_request,
-        http_client,
-        app_creation_url
+@pytest.mark.gen_test(timeout=90)
+async def test_successful_app_lifecycle(
+    prepare_send_file_request, http_client, routes, app,
 ):
+    repo = app.settings['repository']
+    configurator = app.settings['configurator']
+
     request_data = prepare_send_file_request('valid_app')
+    assert request_data
+
+    list_url = routes['app_list']()
     response = await http_client.fetch(
-        app_creation_url, method='POST',
-        **request_data, raise_error=False
+        list_url, method='POST', **request_data, raise_error=False, request_timeout=90,
     )
-    assert response.code == 200
+    assert response.code == 201
 
     response_body = response.body.decode()
     app_data = json.loads(response_body)
 
     app_port = app_data['port']
-    app_url = f"http://localhost:{app_port}/"
+    app_id = app_data['id']
+    app_uid = app_data['uid']
+
+    app_url = f'http://localhost:{app_port}/'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    response_data = app_response.body.decode()
+    assert response_data == 'It works'
+
+    stored_environment_vars = await configurator.get_app_environment_data(app_uid)
+    old_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
+
+    expected_environment_vars = {'ENTRYPOINT': 'application', 'ABC': '5'}
+    assert stored_environment_vars == expected_environment_vars
+
+    app_path = path.join(settings.apps_path, app_uid)
+
+    saved_app = await repo.get(id=app_id)
+    assert saved_app and saved_app.port == app_port and saved_app.uid == app_uid
+
+    assert path.exists(app_path)
+
+    detail_url = routes['app_detail'](app_id)
+
+    update_request_data = prepare_send_file_request('another_valid_app')
+    assert update_request_data
+
+    response = await http_client.fetch(
+        detail_url,
+        method='PUT',
+        **update_request_data,
+        raise_error=False,
+        request_timeout=90,
+    )
+    assert response.code == 200
+    assert path.exists(app_path)
+
+    updated_data = json.loads(response.body.decode())
+    updated_app = await repo.get(id=app_id)
+
+    print(await repo.list())
+
+    assert updated_app.name == updated_data['name']
+    assert updated_app.description == updated_data['description']
+
+    stored_environment_vars = await configurator.get_app_environment_data(app_uid)
+    expected_environment_vars = {
+        'TEST_ENV': '2',
+        f'{APP_NAME_VARIABLE_NAME}': updated_app.name,
+        f'{APP_DESCRIPTION_VARIABLE_NAME}': updated_app.description,
+    }
+    new_modification_ts = stored_environment_vars.pop(configurator.MODIFIED_AT_ENV_NAME)
+
+    assert stored_environment_vars == expected_environment_vars
+    assert new_modification_ts != old_modification_ts
+
+    app_url = f'http://localhost:{app_port}/'
+    app_response = await http_client.fetch(app_url, method='GET', raise_error=False)
+    response_data = app_response.body.decode()
+    assert response_data == expected_environment_vars['TEST_ENV']
+
+    book_id = 5
+    app_detail_url = f'http://localhost:{app_port}/books/{book_id}/'
     app_response = await http_client.fetch(
-        app_url, method='GET', raise_error=False
+        app_detail_url, method='DELETE', raise_error=False
     )
     response_data = app_response.body.decode()
-    assert response_data == "It works"
+    assert response_data == str(book_id)
+
+    response = await http_client.fetch(detail_url, method='DELETE', raise_error=False)
+    assert response.code == 204
+
+    deleted_app = await repo.get(id=app_id)
+    assert deleted_app is None
+
+    assert not path.exists(app_path)
+
+    with pytest.raises(ConnectionRefusedError):
+        await http_client.fetch(app_url, method='GET', raise_error=False)
 
 
-@pytest.mark.gen_test
-async def test_failed_app_validation(
-        prepare_send_file_request,
-        http_client,
-        app_creation_url
-):
+@pytest.mark.gen_test(timeout=90)
+async def test_failed_app_cases(prepare_send_file_request, http_client, routes):
+    url = routes['app_list']()
+
     request_data = prepare_send_file_request('app_with_empty_file')
     response = await http_client.fetch(
-        app_creation_url,
-        method='POST',
-        raise_error=False,
-        **request_data
+        url, method='POST', raise_error=False, **request_data,
     )
-    assert response.code == 500
+    assert response.code == 400
+
+    some_uid = 'abc'
+    invalid_post_url = f'{url}{some_uid}'
+    response = await http_client.fetch(
+        invalid_post_url, method='POST', raise_error=False, **request_data
+    )
+    assert response.code == 400
+
+    invalid_delete_url = routes['app_detail'](some_uid)
+    response = await http_client.fetch(
+        invalid_delete_url, method='DELETE', raise_error=False, request_timeout=90
+    )
+    assert response.code == 404
+
+    request_data = prepare_send_file_request('app_with_missing_entrypoint')
+    response = await http_client.fetch(
+        url, method='POST', raise_error=False, **request_data,
+    )
+    assert response.code == 400
