@@ -502,7 +502,7 @@ def get_unit_service_from_env() -> 'UnitService':
 
 
 def create_db_instance(client: 'DockerClient', env_data: dict) -> str:
-    db_port = env_data.get('DB_PORT', 5432)
+    db_port = env_data.get('DB_PORT')
     db_user = env_data.get('DB_USER')
     db_password = env_data.get('DB_PASSWORD')
 
