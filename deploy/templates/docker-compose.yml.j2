@@ -38,6 +38,9 @@ services:
       - .env
     volumes:
       - {% if develop -%} ${APPS_PATH} {%- else -%} apps {%- endif -%}:${MOUNTED_APPS_PATH}
+{% if not develop %}
+      - /var/run/docker.sock:/var/run/docker.sock
+{% endif %}
 
   ui:
     build:
